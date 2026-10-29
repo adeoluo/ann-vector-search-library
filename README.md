@@ -129,6 +129,17 @@ method and tables: [`docs/EVALUATION_REPORT.md`](docs/EVALUATION_REPORT.md).
 - **Data card:** [`docs/DATA_CARD.md`](docs/DATA_CARD.md)
 - **Threat model:** [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md)
 
+## Comparison scope
+
+The reported reductions are relative to an exhaustive brute-force scan, measured as distance
+computations per query, not wall-clock time and not relative to an optimized library. This
+project has **not** been benchmarked against [FAISS](https://github.com/facebookresearch/faiss)
+or [hnswlib](https://github.com/nmslib/hnswlib), and it does not claim to beat them: a pure-Python
+implementation will not match a compiled library's wall-clock latency, and fewer distance
+computations do not by themselves imply faster execution. What the result establishes is the
+recall-versus-comparison-count trade-off of the HNSW algorithm itself. A controlled comparison
+against hnswlib on a shared dataset, including wall-clock latency, is the natural next step.
+
 ## Limitations
 
 - Pure-Python distance math is slow per comparison; the win is in doing far fewer of them, not in
@@ -139,6 +150,7 @@ method and tables: [`docs/EVALUATION_REPORT.md`](docs/EVALUATION_REPORT.md).
 
 ## Roadmap
 
+- [ ] Benchmark recall and wall-clock latency against hnswlib and FAISS on a shared dataset.
 - [ ] Add node deletion with lazy tombstones and re-linking.
 - [ ] Add a persisted on-disk index format.
 - [ ] Add scalar quantization of stored vectors to cut memory.
