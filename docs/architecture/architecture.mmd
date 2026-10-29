@@ -1,0 +1,55 @@
+---
+title: System Architecture - ANN Vector Search Library
+config:
+  theme: base
+  themeVariables:
+    fontFamily: "Inter, system-ui, sans-serif"
+    primaryColor: "#F8FAFC"
+    primaryBorderColor: "#1E293B"
+    primaryTextColor: "#1E293B"
+    lineColor: "#64748B"
+    clusterBkg: "#EEF2FF"
+    clusterBorder: "#94A3B8"
+---
+flowchart TB
+    classDef edge     fill:#F59E0B,stroke:#1E293B,color:#1E293B,stroke-width:1px;
+    classDef core     fill:#6366F1,stroke:#1E293B,color:#ffffff,stroke-width:1px;
+    classDef data     fill:#10B981,stroke:#1E293B,color:#ffffff,stroke-width:1px;
+    classDef control  fill:#0EA5E9,stroke:#1E293B,color:#ffffff,stroke-width:1px;
+    classDef obs      fill:#CBD5E1,stroke:#1E293B,color:#1E293B,stroke-width:1px;
+
+    Client([Client]):::edge
+
+    subgraph Build["Index construction"]
+        direction TB
+        Insert["Insert<br/>random level from geometric law"]:::core
+        Descend["Greedy descent<br/>through upper layers"]:::core
+        Connect["Beam search + neighbor heuristic<br/>connect M edges per layer"]:::core
+    end
+
+    Graph[(Layered proximity graph)]:::data
+
+    subgraph Query["Search path (stateless)"]
+        direction TB
+        Top["Greedy descent<br/>upper layers, ef = 1"]:::core
+        Bottom["Beam search<br/>bottom layer, width ef"]:::core
+        TopK["Top-k by distance"]:::core
+    end
+
+    Counter["Distance counter<br/>comparisons per query"]:::obs
+
+    subgraph Edge["Service layer (stdlib HTTP)"]
+        direction TB
+        Router["Router<br/>/health | /ready | /metrics | /search | /recall"]:::core
+        Validate["Validation<br/>fixed-dim vector, bounded k and ef"]:::control
+    end
+
+    Result["Nearest neighbors + recall vs exact"]:::obs
+
+    Insert --> Descend --> Connect -->|edges| Graph
+    Client -->|query vector| Router --> Validate --> Top --> Bottom --> TopK
+    Graph -.-> Top
+    Graph -.-> Bottom
+    Bottom -.-> Counter
+    TopK --> Result
+    Result --> Router -->|JSON response| Client
