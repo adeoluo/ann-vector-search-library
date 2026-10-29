@@ -13,7 +13,7 @@ import time
 
 from ann_vector_search_library.brute import BruteForce
 from ann_vector_search_library.data import make_queries, make_vectors
-from ann_vector_search_library.evaluation import recall_curve
+from ann_vector_search_library.evaluation import recall_curve, timed_comparison
 from ann_vector_search_library.hnsw import HNSW
 
 
@@ -34,6 +34,12 @@ def main() -> None:
     print(f"Recall@{k} and distance-computation cost against brute force:")
     for report in recall_curve(index, brute, queries, k, [16, 32, 64, 128]):
         print(f"  {report.format()}")
+
+    print()
+    print("Wall-clock comparison against an exact scan (averaged over 3 seeds):")
+    print("Fewer distance computations do not guarantee lower latency in pure Python.")
+    for size in (1000, 2000, 4000):
+        print(f"  {timed_comparison(count=size, dim=dim, k=k, ef=64).format()}")
 
 
 if __name__ == "__main__":

@@ -63,6 +63,26 @@ At ``ef`` 64 the index reaches **0.945 recall@10 while computing 280 distances p
 cost along a smooth curve, and the saving grows with dataset size because graph search scales far
 better than a linear scan.
 
+### Wall-clock time against an exact scan
+
+Distance-computation counts show the algorithmic saving, but latency is what a caller feels. This
+comparison measures real query time against this library's own pure-Python exact scan, averaged
+over three seeds (`ef` 64, dim 16, 50 queries per seed):
+
+| Vectors | Build time | Index query | Exact scan | Index speed-up | Recall@10 |
+|---|---:|---:|---:|---:|---:|
+| 1,000 | 0.42 s | 0.277 ms | 0.849 ms | 3.1x | 0.991 |
+| 2,000 | 0.94 s | 0.343 ms | 1.712 ms | 5.0x | 0.943 |
+| 4,000 | 2.21 s | 0.425 ms | 3.647 ms | 8.6x | 0.865 |
+
+Against a same-language exact scan the index is faster, and the gap widens with dataset size
+because its query cost grows far more slowly than a linear scan. The honest caveat is that this is
+a same-interpreter comparison: an **optimized compiled library** (for example a vectorized exact
+search in FAISS, hnswlib, or scikit-learn) can still outperform pure-Python approximate search on
+small to medium workloads, because fewer distance computations do not offset per-operation
+interpreter overhead. Establishing competitive absolute latency would require either a compiled
+kernel or a matched-recall comparison against those libraries, which is noted in the roadmap.
+
 ## Demonstration
 
 ```text
