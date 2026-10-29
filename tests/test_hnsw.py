@@ -7,7 +7,7 @@ import pytest
 from ann_vector_search_library.brute import BruteForce
 from ann_vector_search_library.data import make_queries, make_vectors
 from ann_vector_search_library.distance import cosine_distance, get_metric, squared_euclidean
-from ann_vector_search_library.evaluation import recall_at_k, recall_curve
+from ann_vector_search_library.evaluation import recall_at_k, recall_curve, timed_comparison
 from ann_vector_search_library.hnsw import HNSW
 
 
@@ -111,3 +111,15 @@ def test_recall_curve_shape() -> None:
     reports = recall_curve(index, brute, queries, 10, [16, 64])
     assert len(reports) == 2
     assert "recall=" in reports[0].format()
+
+
+def test_timed_comparison_reports_recall_and_timing() -> None:
+    report = timed_comparison(count=400, dim=8, k=10, ef=64, query_count=20, seeds=2)
+    assert report.count == 400
+    assert report.seeds == 2
+    assert 0.0 <= report.recall <= 1.0
+    assert report.recall > 0.7
+    assert report.build_seconds > 0.0
+    assert report.hnsw_query_ms > 0.0
+    assert report.exact_query_ms > 0.0
+    assert "recall@k" in report.format()
