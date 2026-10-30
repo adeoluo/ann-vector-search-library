@@ -83,6 +83,23 @@ small to medium workloads, because fewer distance computations do not offset per
 interpreter overhead. Establishing competitive absolute latency would require either a compiled
 kernel or a matched-recall comparison against those libraries, which is noted in the roadmap.
 
+### Scale
+
+> Reproduce with `uv run python benchmarks/scale.py`. Synthetic clustered vectors, dim 16, `ef` 64,
+> 50 queries per size; peak memory from `tracemalloc`.
+
+| Vectors | Build time | Index query | Exact scan | Index throughput | Peak memory | Recall@10 |
+|---|---:|---:|---:|---:|---:|---:|
+| 1,000 | 2.9 s | 1.88 ms | 6.47 ms | ~533 q/s | 1.2 MiB | 0.982 |
+| 2,000 | 6.2 s | 2.24 ms | 11.62 ms | ~447 q/s | 2.2 MiB | 0.928 |
+| 4,000 | 14.1 s | 2.27 ms | 21.23 ms | ~441 q/s | 4.5 MiB | 0.908 |
+| 8,000 | 31.1 s | 4.20 ms | 59.68 ms | ~238 q/s | 9.0 MiB | 0.786 |
+
+As the dataset grows the index query time stays roughly flat while the exact scan grows linearly, so
+the index's relative advantage widens (from about 3x to 14x fewer milliseconds per query), and memory
+grows linearly with the vector count. These are synthetic data on a pure-Python implementation: the
+numbers show how the algorithm scales, not competitive absolute latency against a compiled library.
+
 ## Demonstration
 
 ```text
