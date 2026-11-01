@@ -80,8 +80,34 @@ because its query cost grows far more slowly than a linear scan. The honest cave
 a same-interpreter comparison: an **optimized compiled library** (for example a vectorized exact
 search in FAISS, hnswlib, or scikit-learn) can still outperform pure-Python approximate search on
 small to medium workloads, because fewer distance computations do not offset per-operation
-interpreter overhead. Establishing competitive absolute latency would require either a compiled
-kernel or a matched-recall comparison against those libraries, which is noted in the roadmap.
+interpreter overhead.
+
+### Measured against hnswlib and FAISS
+
+The honest comparison the project needs is against the mature libraries themselves, so
+`benchmarks/compare_libraries.py` runs the from-scratch index, **hnswlib** (the reference HNSW
+implementation), and a **FAISS** flat index on the same data and scores each on recall against exact
+ground truth, query latency, and build time. hnswlib, faiss, and numpy are opt-in `validation`
+dependencies, so the core library stays zero dependency.
+
+> Reproduce with `uv sync --group validation && uv run python benchmarks/compare_libraries.py`.
+> 10,000 clustered vectors, dim 16, 200 queries, `k` 10, matched HNSW parameters (`M` 16,
+> `ef_construction` 200, `ef` 64).
+
+| Library | Build time | Query latency | Recall@10 |
+|---|---:|---:|---:|
+| FAISS flat (exact, compiled) | 0.001 s | 0.083 ms | 1.000 |
+| hnswlib (compiled) | 0.123 s | 0.028 ms | 0.926 |
+| **from-scratch (pure Python)** | 18.66 s | 0.765 ms | **0.926** |
+
+The key result is that the from-scratch index reaches **the same recall as hnswlib (0.926) at
+matched parameters**, which is direct evidence that the HNSW graph construction and search are
+implemented correctly, not merely internally consistent. The honest gap is wall-clock: the compiled
+libraries build roughly 150x faster and answer queries roughly 27x faster, exactly what is expected
+from a pure-Python implementation versus optimized native code. The recall parity is enforced by an
+opt-in test, `tests/test_library_parity.py`, which asserts the from-scratch recall tracks hnswlib
+within a small tolerance. Closing the latency gap would require a vectorized or compiled backend,
+which is noted in the roadmap.
 
 ### Scale
 
@@ -168,14 +194,15 @@ method and tables: [`docs/EVALUATION_REPORT.md`](docs/EVALUATION_REPORT.md).
 
 ## Comparison scope
 
-The reported reductions are relative to an exhaustive brute-force scan, measured as distance
-computations per query, not wall-clock time and not relative to an optimized library. This
-project has **not** been benchmarked against [FAISS](https://github.com/facebookresearch/faiss)
-or [hnswlib](https://github.com/nmslib/hnswlib), and it does not claim to beat them: a pure-Python
-implementation will not match a compiled library's wall-clock latency, and fewer distance
-computations do not by themselves imply faster execution. What the result establishes is the
-recall-versus-comparison-count trade-off of the HNSW algorithm itself. A controlled comparison
-against hnswlib on a shared dataset, including wall-clock latency, is the natural next step.
+The distance-computation reductions in the scaling tables are relative to an exhaustive
+brute-force scan, measured as distance computations per query. The **"Measured against hnswlib and
+FAISS"** section above goes further and benchmarks the index directly against
+[FAISS](https://github.com/facebookresearch/faiss) and
+[hnswlib](https://github.com/nmslib/hnswlib) on a shared dataset. The result is honest in both
+directions: the from-scratch index matches hnswlib's recall at matched parameters (the algorithm is
+correct), but the compiled libraries are far faster on wall-clock (roughly 27x on query latency), so
+this project does **not** claim to beat them on performance. A pure-Python implementation cannot
+match a compiled library's latency; closing that gap would require a vectorized or compiled backend.
 
 ## Limitations
 
@@ -187,7 +214,8 @@ against hnswlib on a shared dataset, including wall-clock latency, is the natura
 
 ## Roadmap
 
-- [ ] Benchmark recall and wall-clock latency against hnswlib and FAISS on a shared dataset.
+- [x] Benchmark recall and wall-clock latency against hnswlib and FAISS on a shared dataset.
+- [ ] Add a vectorized or compiled distance backend to close the wall-clock gap.
 - [ ] Add node deletion with lazy tombstones and re-linking.
 - [ ] Add a persisted on-disk index format.
 - [ ] Add scalar quantization of stored vectors to cut memory.
