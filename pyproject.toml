@@ -15,6 +15,15 @@ dev = [
     "pytest>=8.0",
     "pytest-cov>=5.0",
 ]
+# Optional, opt-in only: the independent recall comparison against hnswlib and
+# FAISS in tests/test_library_parity.py and benchmarks/compare_libraries.py.
+# Not installed by default CI, so the core library stays zero dependency.
+# Run with: uv sync --group validation && uv run pytest tests/test_library_parity.py
+validation = [
+    "hnswlib>=0.8",
+    "faiss-cpu>=1.7",
+    "numpy>=1.24",
+]
 
 [build-system]
 requires = ["hatchling"]
