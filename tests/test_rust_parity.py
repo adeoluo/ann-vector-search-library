@@ -88,6 +88,29 @@ def test_arbitrary_ids_and_random_order() -> None:
         assert rs.search(q, 5) == py.search(q, 5)
 
 
+@pytest.mark.parametrize("metric", ["euclidean", "cosine"])
+def test_f32_precision_keeps_recall(metric: str) -> None:
+    vectors = make_vectors(2000, 32, seed=5)
+    queries = make_queries(100, 32, seed=6)
+    exact = build(BruteForce, vectors, metric=metric)
+    truth = [{i for i, _ in exact.search(q, 10)} for q in queries]  # type: ignore[attr-defined]
+    recall = {}
+    for precision in ("f64", "f32"):
+        index = build(
+            RustHNSW, vectors, m=12, ef_construction=100, metric=metric, precision=precision
+        )
+        assert index.precision == precision  # type: ignore[attr-defined]
+        hits = sum(
+            len({i for i, _ in index.search(q, 10, ef=64)} & t)  # type: ignore[attr-defined]
+            for q, t in zip(queries, truth, strict=True)
+        )
+        recall[precision] = hits / 1000
+    assert recall["f64"] > 0.85
+    assert recall["f32"] >= recall["f64"] - 0.01
+    with pytest.raises(ValueError, match="unknown precision"):
+        RustHNSW(dim=3, precision="f16")
+
+
 def test_missing_extension(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(backend, "_EXTENSION", None)
     with pytest.raises(RuntimeError, match="not installed"):

@@ -30,5 +30,7 @@ constructor and methods as `HNSW`.
   the graph shows up as a different count, which is a much stronger check than recall alone.
 * Exact ties in distance can be ordered differently (Python sorts tied ids by set iteration
   order, Rust by id). Random float data does not produce ties.
-* The Rust core is 14 to 22 times faster than Python on the benchmark, still with scalar
-  `f64` loops; SIMD and `f32` storage are on the roadmap.
+* The Rust core is 21 to 40 times faster than Python on the benchmark. Its distances stay
+  serial `f64` sums, which rules out SIMD in the default mode. An opt-in `precision="f32"` mode
+  runs the same algorithm with lane-parallel `f32` sums; it gives up bit-exact parity and is
+  tested on recall instead (see the README's SIFT results).

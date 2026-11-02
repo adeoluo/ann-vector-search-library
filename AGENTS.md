@@ -19,7 +19,7 @@ An approximate nearest neighbor vector search library built from scratch in Pyth
 
 Key modules:
 
-- `rust/src/distance.rs`: Distance functions, summed in the same order as the Python implementation.
+- `rust/src/distance.rs`: Distance functions.
 - `rust/src/hnsw.rs`: HNSW (Malkov and Yashunin, 2016), mirroring `ann_vector_search_library.hnsw.HNSW`.
 - `rust/src/lib.rs`: Rust core of ann-vector-search-library: an HNSW index that reproduces the Python one.
 - `rust/src/python.rs`: PyO3 bindings, built by maturin into the `ann_vector_search_rs` extension module.
