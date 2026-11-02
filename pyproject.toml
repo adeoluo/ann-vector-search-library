@@ -1,7 +1,7 @@
 [project]
 name = "ann-vector-search-library"
 version = "0.1.0"
-description = "An approximate nearest neighbor vector search library built from scratch in pure Python, implementing HNSW"
+description = "An approximate nearest neighbor vector search library built from scratch in Python, implementing HNSW"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
@@ -17,7 +17,7 @@ dev = [
 ]
 # Optional, opt-in only: the independent recall comparison against hnswlib and
 # FAISS in tests/test_library_parity.py and benchmarks/compare_libraries.py.
-# Not installed by default CI, so the core library stays zero dependency.
+# Not installed by default CI and not required by the core library.
 # Run with: uv sync --group validation && uv run pytest tests/test_library_parity.py
 validation = [
     "hnswlib>=0.8",

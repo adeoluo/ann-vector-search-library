@@ -8,8 +8,8 @@ search at each remaining layer and connects to a selected set of neighbors. Sear
 mirrors insertion: greedy descent through the upper layers, then a beam search of
 width ``ef`` at the bottom.
 
-This is a from-scratch implementation following Malkov and Yashunin (2016), in
-pure Python with no numerical libraries. A distance counter records how many
+This is a from-scratch implementation following Malkov and Yashunin (2016), with
+the distance math written out directly. A distance counter records how many
 comparisons each search makes so the saving over a brute-force scan is measurable.
 """
 

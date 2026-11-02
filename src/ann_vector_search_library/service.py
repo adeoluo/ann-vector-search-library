@@ -1,4 +1,4 @@
-"""A dependency-free HTTP service exposing the HNSW index.
+"""A standard-library HTTP service exposing the HNSW index.
 
 The service builds an index over a synthetic dataset at startup, then answers
 nearest-neighbor queries and reports recall against exact search. The routing

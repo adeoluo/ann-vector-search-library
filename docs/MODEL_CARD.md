@@ -2,7 +2,7 @@
 
 ## Overview
 - **What it is:** a from-scratch HNSW approximate nearest neighbor index with a brute-force exact
-  baseline, in pure Python with no numerical libraries.
+  baseline, implemented directly in Python so the graph and distance logic are fully inspectable.
 - **Base model:** none. The index is a data structure built over user-provided vectors.
 - **Version and date:** 0.1.0, 2026.
 
@@ -12,7 +12,7 @@
 - **Primary users:** engineers building retrieval or recommendation systems.
 
 ## Out-of-scope / prohibited use
-- Not an optimized production vector database; pure-Python distance math is slow per comparison.
+- Not an optimized production vector database; interpreted distance math is slow per comparison.
 - Not persistent; the index is in-memory with no deletion support.
 
 ## Performance

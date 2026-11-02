@@ -1,14 +1,14 @@
 """Cross-library comparison against hnswlib and FAISS.
 
-The core library is a from-scratch, pure-Python HNSW. This module benchmarks it
+The core library is a from-scratch Python HNSW. This module benchmarks it
 against two mature, compiled libraries on the same data: hnswlib (the reference
 HNSW implementation) and FAISS (a flat exact index and an IVF approximate index).
 It reports, for each, recall@k against exact ground truth, mean query latency,
 and index build time, so the trade-off is measured honestly rather than asserted.
 
 hnswlib, faiss, and numpy are optional ``validation`` dependencies, not runtime
-dependencies, so the core library stays zero dependency. Import this module only
-when those packages are installed.
+dependencies of the core library. Import this module only when those packages are
+installed.
 """
 
 from __future__ import annotations
@@ -78,7 +78,7 @@ def run_from_scratch(
     results, query_ms = _time_queries(
         lambda q: [node_id for node_id, _ in index.search(q, k, ef=ef)], queries
     )
-    return LibraryResult("from-scratch (pure Py)", build, query_ms, _recall(results, truth, k))
+    return LibraryResult("from-scratch (Python)", build, query_ms, _recall(results, truth, k))
 
 
 def run_hnswlib(
@@ -159,7 +159,8 @@ def compare(
 def main() -> None:
     print(
         "ANN cross-library comparison (synthetic clustered vectors). The from-scratch index "
-        "is pure Python;\nhnswlib and FAISS are compiled. Recall is against exact ground truth."
+        "is interpreted Python;\nhnswlib and FAISS are compiled. Recall is against exact "
+        "ground truth."
     )
     for result in compare():
         print(f"  {result.format()}")
