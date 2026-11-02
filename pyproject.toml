@@ -9,6 +9,11 @@ authors = [{ name = "Adeolu Ogunnoiki" }]
 dependencies = []
 
 [dependency-groups]
+# Optional Rust core (rust/), opt-in so the default install needs no Rust toolchain:
+#   uv sync --group rust && uv run maturin develop --uv --release -m rust/Cargo.toml
+rust = [
+    "maturin>=1.7,<2",
+]
 dev = [
     "ruff>=0.8",
     "mypy>=1.14",
