@@ -27,8 +27,8 @@
 - **No code execution:** inputs are numbers; no user-supplied string is evaluated.
 
 ## Supply chain
-- No third-party runtime packages. Development tooling is pinned via `uv.lock`. CodeQL and dependency
-  scanning run in CI.
+- No third-party Python runtime packages. The compiled Rust core's crates (PyO3 and rayon) are
+  pinned by `rust/Cargo.lock`, and development tooling by `uv.lock`. CodeQL runs in CI.
 
 ## Residual risk
 - A flood of searches could exhaust CPU; a production deployment would add a rate limiter and run
