@@ -1,4 +1,9 @@
-"""Optional Rust backend: ``RustHNSW``, a drop-in for ``HNSW`` backed by ``ann_vector_search_rs``.
+"""The Rust backend: ``RustHNSW``, a drop-in for ``HNSW`` backed by the compiled
+``ann_vector_search_rs`` extension that every install builds into this package.
+
+``create_index`` is the entry point: it returns the fastest index available, the Rust core
+in ``f32`` mode, and falls back to the Python ``HNSW`` only if the extension is missing (for
+example a source checkout where it has not been compiled).
 
 The Rust index reproduces the Python one: ``RustHNSW`` draws each node's level from the
 same seeded ``random.Random`` with the same formula and passes it in, and the Rust code
@@ -16,16 +21,20 @@ from __future__ import annotations
 import importlib
 import math
 import random
-from typing import Any
+from typing import Any, Protocol
 
 from ann_vector_search_library.distance import Vector, get_metric
+from ann_vector_search_library.hnsw import HNSW
 
 
 def _load_extension() -> Any:
-    try:
-        return importlib.import_module("ann_vector_search_rs")
-    except ImportError:
-        return None
+    # Inside the package for normal installs; top level for an older `maturin develop`.
+    for name in ("ann_vector_search_library.ann_vector_search_rs", "ann_vector_search_rs"):
+        try:
+            return importlib.import_module(name)
+        except ImportError:
+            continue
+    return None
 
 
 _EXTENSION: Any = _load_extension()
@@ -65,7 +74,9 @@ class RustHNSW:
         precision: str = "f64",
     ) -> None:
         if _EXTENSION is None:
-            raise RuntimeError("the Rust backend is not installed; run `make rust-develop`")
+            raise RuntimeError(
+                "the Rust backend is not built; run `uv sync` or `make rust-develop`"
+            )
         get_metric(metric)  # same validation and error as the Python index
         self.dim = dim
         self.m = m
@@ -103,3 +114,62 @@ class RustHNSW:
         """Search many queries in parallel."""
 
         return [list(r) for r in self._core.search_batch(queries, k, ef)]
+
+
+class CostCounter(Protocol):
+    """Counts distance computations; ``DistanceCounter`` and the Rust counter both fit."""
+
+    @property
+    def count(self) -> int: ...
+
+    def reset(self) -> None: ...
+
+
+class VectorIndex(Protocol):
+    """What callers need from an index: the Python ``HNSW`` and ``RustHNSW`` both fit."""
+
+    @property
+    def counter(self) -> CostCounter: ...
+
+    def __len__(self) -> int: ...
+
+    def add(self, node_id: int, vector: Vector) -> None: ...
+
+    def search(
+        self, query: Vector, k: int, *, ef: int | None = None
+    ) -> list[tuple[int, float]]: ...
+
+
+BACKENDS = ("auto", "rust", "python")
+
+
+def create_index(
+    dim: int,
+    *,
+    m: int = 8,
+    ef_construction: int = 64,
+    metric: str = "euclidean",
+    seed: int = 0,
+    backend: str = "auto",
+    precision: str = "f32",
+) -> VectorIndex:
+    """Return an HNSW index on the fastest available backend.
+
+    ``backend="auto"`` (the default) uses the Rust core when the extension is present,
+    else the Python index; ``"rust"`` requires the extension and ``"python"`` forces the
+    reference implementation. ``precision`` applies to the Rust core: ``"f32"`` (the
+    default, fastest, same recall) or ``"f64"`` (bit-identical to the Python index).
+    """
+
+    if backend not in BACKENDS:
+        raise ValueError(f"unknown backend {backend!r}; expected one of {BACKENDS}")
+    if backend == "python" or (backend == "auto" and not rust_available()):
+        return HNSW(dim=dim, m=m, ef_construction=ef_construction, metric=metric, seed=seed)
+    return RustHNSW(
+        dim=dim,
+        m=m,
+        ef_construction=ef_construction,
+        metric=metric,
+        seed=seed,
+        precision=precision,
+    )

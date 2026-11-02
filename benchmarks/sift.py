@@ -6,7 +6,7 @@ Both HNSW indexes use the same M and ef_construction; build and single-query tim
 run on one thread so the comparison is like for like, and hnswlib's multi-threaded
 build plus the Rust core's parallel batch search are reported separately.
 
-Requires ``make rust-develop`` and ``uv sync --group validation``.
+Requires ``uv sync --group validation`` (installing builds the Rust core).
 
     uv run python benchmarks/sift.py --data /path/to/sift --n 100000
 """
@@ -48,7 +48,7 @@ def main() -> None:
     parser.add_argument("--out", type=Path)
     args = parser.parse_args()
     if not rust_available():
-        raise SystemExit("build the extension first: make rust-develop")
+        raise SystemExit("build the Rust core first: uv sync (or make rust-develop)")
 
     k, efs = 10, (16, 64, 256)
     base = read_vecs(args.data / "sift_base.fvecs", "float32")[: args.n]

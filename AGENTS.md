@@ -24,7 +24,7 @@ Key modules:
 - `rust/src/lib.rs`: Rust core of ann-vector-search-library: an HNSW index that reproduces the Python one.
 - `rust/src/python.rs`: PyO3 bindings, built by maturin into the `ann_vector_search_rs` extension module.
 - `src/ann_vector_search_library/__init__.py`: ANN Vector Search Library - HNSW approximate nearest neighbor search from scratch.
-- `src/ann_vector_search_library/backend.py`: Optional Rust backend: ``RustHNSW``, a drop-in for ``HNSW`` backed by ``ann_vector_search_rs``.
+- `src/ann_vector_search_library/backend.py`: The Rust backend: ``RustHNSW``, a drop-in for ``HNSW`` backed by the compiled ``ann_vector_search_rs`` extension that every install builds into this package.
 - `src/ann_vector_search_library/brute.py`: Exact nearest-neighbor search by brute force, for recall ground truth.
 - `src/ann_vector_search_library/cli.py`: Command line interface for the HNSW vector search library.
 - `src/ann_vector_search_library/data.py`: Deterministic synthetic vector datasets with cluster structure.
@@ -46,9 +46,9 @@ Key modules:
 | `make test` | Run tests |
 | `make coverage` | Tests with coverage gate |
 | `make rust-check` | Rust core: fmt, clippy (with and without Python), unit tests |
-| `make rust-develop` | Build the Rust extension into .venv (opt-in rust group) |
-| `make parity` | Rust vs Python parity tests (requires rust-develop) |
-| `make bench-compare` | Python vs Rust build and query speed (requires rust-develop) |
+| `make rust-develop` | Rebuild the Rust core into .venv after editing rust/ (uv sync also builds it) |
+| `make parity` | Rust vs Python parity tests |
+| `make bench-compare` | Python vs Rust build and query speed |
 | `make evaluation` | Reproduce the results table |
 | `make run` | Run the HTTP service |
 | `make diagram` | Render architecture diagram to SVG |

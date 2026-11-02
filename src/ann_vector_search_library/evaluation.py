@@ -5,9 +5,9 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass
 
+from ann_vector_search_library.backend import VectorIndex
 from ann_vector_search_library.brute import BruteForce
 from ann_vector_search_library.distance import Vector
-from ann_vector_search_library.hnsw import HNSW
 
 
 @dataclass(frozen=True)
@@ -34,7 +34,7 @@ class RecallReport:
 
 
 def recall_at_k(
-    index: HNSW, brute: BruteForce, queries: list[Vector], k: int, *, ef: int
+    index: VectorIndex, brute: BruteForce, queries: list[Vector], k: int, *, ef: int
 ) -> RecallReport:
     """Return recall@k of the index against exact search, with cost counts."""
 
@@ -56,7 +56,7 @@ def recall_at_k(
 
 
 def recall_curve(
-    index: HNSW, brute: BruteForce, queries: list[Vector], k: int, ef_values: list[int]
+    index: VectorIndex, brute: BruteForce, queries: list[Vector], k: int, ef_values: list[int]
 ) -> list[RecallReport]:
     """Return a recall/cost report for each ``ef`` in ``ef_values``."""
 
@@ -116,6 +116,7 @@ def timed_comparison(
     """
 
     from ann_vector_search_library.data import make_queries, make_vectors
+    from ann_vector_search_library.hnsw import HNSW  # the Python index, to match the scan
 
     build_total = 0.0
     hnsw_total = 0.0
