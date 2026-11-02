@@ -9,8 +9,7 @@ authors = [{ name = "Adeolu Ogunnoiki" }]
 dependencies = []
 
 [dependency-groups]
-# Optional Rust core (rust/), opt-in so the default install needs no Rust toolchain:
-#   uv sync --group rust && uv run maturin develop --uv --release -m rust/Cargo.toml
+# Rebuild the Rust core in place while editing it: make rust-develop
 rust = [
     "maturin>=1.7,<2",
 ]
@@ -31,11 +30,20 @@ validation = [
 ]
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["maturin>=1.7,<2"]
+build-backend = "maturin"
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/ann_vector_search_library"]
+# The Rust core (rust/) is compiled into the package as `ann_vector_search_library.ann_vector_search_rs`,
+# so every install uses it; the Python implementation stays as the reference.
+[tool.maturin]
+python-source = "src"
+manifest-path = "rust/Cargo.toml"
+module-name = "ann_vector_search_library.ann_vector_search_rs"
+features = ["python"]
+
+[tool.uv]
+# Rebuild the extension when the Rust sources change.
+cache-keys = [{ file = "pyproject.toml" }, { file = "rust/Cargo.toml" }, { file = "rust/src/**/*.rs" }]
 
 # ---------------------------------------------------------------------------
 # Tooling

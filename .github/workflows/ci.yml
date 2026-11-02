@@ -32,7 +32,10 @@ jobs:
       - name: Set up Python ${{ matrix.python-version }}
         run: uv python install ${{ matrix.python-version }}
 
-      - name: Install dependencies
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies (builds the Rust core)
         run: uv sync --all-extras --dev
 
       - name: Format check (ruff)
@@ -45,6 +48,8 @@ jobs:
         run: uv run mypy src
 
       - name: Test (+ coverage gate)
+        env:
+          ANN_REQUIRE_RUST: "1"
         run: uv run pytest --cov=src --cov-report=xml --cov-report=term-missing --cov-fail-under=80
 
       - name: Upload coverage
@@ -81,10 +86,8 @@ jobs:
           cargo clippy --all-targets --features python -- -D warnings
           cargo test
 
-      - name: Build extension (maturin develop)
-        run: |
-          uv sync --group rust --python 3.12
-          uv run --no-sync maturin develop --uv --release -m rust/Cargo.toml
+      - name: Build the package with its Rust core
+        run: uv sync --group rust --python 3.12
 
       - name: Parity tests (Rust vs Python)
         env:

@@ -50,8 +50,10 @@ decisions.
 - **Bounded best-first search** (the ``ef`` beam) at the bottom layer, with greedy descent above.
 - **Degree pruning** to a maximum of ``M`` edges per node (``2M`` at the base layer).
 - **A brute-force index** and a **distance counter** so recall and cost are both measured.
-- **A Rust core** (`rust/`, optional): the same HNSW, reproducing the Python index exactly
-  (same graph, same neighbors, same distance counts), with parallel batch search.
+- **A Rust core** (`rust/`), compiled into the package on install and used by default: the same
+  HNSW, either reproducing the Python index exactly (`f64`: same graph, same neighbors, same
+  distance counts) or with SIMD `f32` distances (the default, same recall, faster), with
+  parallel batch search. The Python index stays as the readable reference.
 
 ## Results
 
@@ -135,7 +137,7 @@ numbers show how the algorithm scales, not competitive absolute latency against 
 
 ### Rust core
 
-> Reproduce with `make rust-develop bench-compare`. 32 dimensions, M=8, ef_construction=64,
+> Reproduce with `make bench-compare`. 32 dimensions, M=8, ef_construction=64,
 > k=10, ef=64, 200 queries; Apple M1, 8 cores. Query times include converting Python lists.
 
 | Vectors | Build (Python) | Build (Rust) | Speedup | Query (Python) | Query (Rust) | Speedup | Batch query (Rust, parallel) | Same answers |
@@ -152,7 +154,7 @@ that changes a single distance or comparison, so the answers stay identical to P
 
 ### Real image descriptors (SIFT, 100,000 vectors)
 
-> Reproduce with `make rust-develop && uv sync --group validation`, then
+> Reproduce with `uv sync --group validation`, then
 > `uv run python benchmarks/sift.py --data <dir with sift_base.fvecs, sift_query.fvecs>`.
 > The first 100,000 SIFT1M base vectors (128 dims) and 1,000 queries, exact ground truth
 > recomputed on the subset, `M` 16, `ef_construction` 200, `k` 10. Builds and single queries on
@@ -207,7 +209,7 @@ without SIMD, while hnswlib keeps the faster multi-threaded build. No claim is m
 
 ```bash
 git clone https://github.com/adeoluo/ann-vector-search-library.git && cd ann-vector-search-library
-make setup                      # install dev tooling + pre-commit hooks
+make setup                      # install (compiles the Rust core; needs a Rust toolchain) + hooks
 make all                        # lint + type-check + test
 
 python -m ann_vector_search_library benchmark   # recall and cost against exact search
@@ -216,9 +218,9 @@ python -m ann_vector_search_library serve        # start the HTTP service on :80
 ```
 
 ```python
-from ann_vector_search_library import HNSW
+from ann_vector_search_library import create_index
 
-index = HNSW(dim=3, m=8, seed=0)
+index = create_index(dim=3, m=8, seed=0)  # the Rust core, f32 SIMD distances
 index.add(0, [0.1, 0.2, 0.3])
 index.add(1, [0.9, 0.8, 0.7])
 print(index.search([0.15, 0.2, 0.25], k=1))  # [(0, ...)]
@@ -230,7 +232,7 @@ print(index.search([0.15, 0.2, 0.25], k=1))  # [(0, ...)]
 
 ```text
 $ python -m ann_vector_search_library benchmark
-Built HNSW over 1000 vectors (dim 16, M 8).
+Built HNSW (Rust core, f32) over 1000 vectors (dim 16, M 8).
 Recall and distance-computation cost against exact search:
   ef=16: recall=0.8600, 123 vs 1000 distance ops/query (8.1x fewer)
   ef=32: recall=0.9140, 163 vs 1000 distance ops/query (6.2x fewer)
@@ -238,23 +240,26 @@ Recall and distance-computation cost against exact search:
   ef=128: recall=1.0000, 324 vs 1000 distance ops/query (3.1x fewer)
 ```
 
-### Rust backend
+### Backends
 
-```bash
-make rust-develop          # build the extension into .venv (needs a Rust toolchain)
-```
+`create_index`, the CLI (`--backend`), and the HTTP service all use the Rust core by default.
+Installing the package compiles it, so the Python index is only used when asked for or when the
+extension is missing from a source checkout.
 
 ```python
-from ann_vector_search_library.backend import RustHNSW
+from ann_vector_search_library import HNSW, RustHNSW, create_index
 
-index = RustHNSW(dim=32, m=8, ef_construction=64, seed=0)  # same constructor as HNSW
+index = create_index(dim=32)  # Rust core, f32 SIMD distances (default)
+exact = create_index(dim=32, precision="f64")  # Rust core, bit-identical to the Python index
+reference = create_index(dim=32, backend="python")  # the readable Python implementation
+
 for i, vector in enumerate(vectors):
     index.add(i, vector)
 index.search(query, 10, ef=64)
-index.search_batch(queries, 10, ef=64)  # parallel, GIL released
-
-fast = RustHNSW(dim=32, precision="f32")  # SIMD lanes, half the memory, no bit-exact parity
+index.search_batch(queries, 10, ef=64)  # RustHNSW only: parallel, GIL released
 ```
+
+After editing `rust/`, `make rust-develop` rebuilds the extension in place.
 
 ### HTTP service
 
@@ -303,10 +308,12 @@ The HTTP service: index health, recall against exact search, and metrics.
   side from the same seeded generator and passed in, and the Rust code makes the same
   distance calls in the same order, so the two can be compared call for call. See
   [ADR 0004](docs/adr/0004-rust-core-exact-reproduction.md).
-- **An opt-in `f32` mode rather than a faster default** - summing a distance in SIMD lanes
-  reorders the additions, which changes the last bits and can change which of two near-equal
-  neighbors wins, so the bit-exact `f64` core stays the default and `precision="f32"` is
-  validated on recall: its tests require recall within 0.01 of the `f64` core.
+- **The fastest backend by default, the exact one on request** - summing a distance in SIMD
+  lanes reorders the additions, which changes the last bits and can change which of two
+  near-equal neighbors wins. Recall is what callers depend on, so `f32` is the default and is
+  validated on recall (its tests require recall within 0.01 of the `f64` core), while
+  `precision="f64"` keeps the bit-exact reproduction of the Python index that the parity tests
+  check call for call.
 
 ## Testing
 
@@ -318,7 +325,7 @@ uv run pytest --cov=src --cov-report=term-missing --cov-fail-under=80
 uv sync --group validation && uv run pytest tests/test_library_parity.py
 
 # Rust core: unit tests, then parity with the Python index
-make rust-check rust-develop parity
+make rust-check parity
 ```
 
 `tests/test_rust_parity.py` builds both indexes from the same data and asserts identical
@@ -352,10 +359,12 @@ extension, and runs the parity tests with the extension required.
 
 ## Limitations
 
-- The Python index is slow per comparison; the optional Rust core is 21 to 40 times faster. Its
-  default `f64` mode stays about 1.3x slower than hnswlib per query because it keeps Python's
-  serial sums, and the `f32` mode, faster than hnswlib on ARM, has only been measured on an
-  Apple M1, not against hnswlib's x86 SIMD build.
+- Installing needs a Rust toolchain, since the core is compiled from source; no prebuilt wheels
+  are published.
+- The Rust core is 21 to 40 times faster than the Python index. Its exact `f64` mode stays about
+  1.3x slower than hnswlib per query because it keeps Python's serial sums, and the default
+  `f32` mode, faster than hnswlib on ARM, has only been measured on an Apple M1, not against
+  hnswlib's x86 SIMD build.
 - Construction in the Rust core is single-threaded, so hnswlib's parallel build is about 3x
   faster on 8 cores.
 - Results match exactly only when no two distances are equal; with exact ties the two

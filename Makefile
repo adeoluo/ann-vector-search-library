@@ -28,14 +28,14 @@ coverage: ## Tests with coverage gate
 rust-check: ## Rust core: fmt, clippy (with and without Python), unit tests
 	cd rust && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo clippy --all-targets --features python -- -D warnings && cargo test
 
-rust-develop: ## Build the Rust extension into .venv (opt-in rust group)
+rust-develop: ## Rebuild the Rust core into .venv after editing rust/ (uv sync also builds it)
 	uv sync --group rust
-	uv run --no-sync maturin develop --uv --release -m rust/Cargo.toml
+	uv run --no-sync maturin develop --uv --release
 
-parity: ## Rust vs Python parity tests (requires rust-develop)
+parity: ## Rust vs Python parity tests
 	ANN_REQUIRE_RUST=1 uv run --no-sync pytest tests/test_rust_parity.py -v
 
-bench-compare: ## Python vs Rust build and query speed (requires rust-develop)
+bench-compare: ## Python vs Rust build and query speed
 	uv run --no-sync python benchmarks/compare_backends.py
 
 evaluation: ## Reproduce the results table
