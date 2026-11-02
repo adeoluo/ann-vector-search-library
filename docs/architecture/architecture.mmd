@@ -5,62 +5,44 @@ flowchart LR
     classDef control  fill:#0EA5E9,stroke:#1E293B,color:#ffffff,stroke-width:1px;
     classDef obs      fill:#CBD5E1,stroke:#1E293B,color:#1E293B,stroke-width:1px;
 
-    Client(["HTTP client"]):::edge
-    CLI(["CLI<br/>benchmark, search, serve"]):::edge
-
-    subgraph Interfaces["Interfaces (stdlib HTTP service)"]
+    subgraph Interfaces["Interfaces"]
         direction TB
-        Router["Router<br/>/health, /ready, /metrics, /search, /recall"]:::edge
-        Validate["Validation<br/>fixed-dim vector, k 1..100, bounded ef"]:::control
+        Client([HTTP client]):::edge
+        CLI(["CLI<br/>benchmark, search, serve"]):::edge
+        Router["Router<br/>/search, /recall"]:::edge
+        Validate["Validation<br/>dim, k, ef bounds"]:::control
+        CLI ~~~ Client --> Router --> Validate
     end
 
-    subgraph Build["Index construction (HNSW.add)"]
+    subgraph State["Data and state"]
         direction TB
-        Vectors[("Synthetic clustered vectors<br/>and held-out queries")]:::data
-        Insert["Insert<br/>geometric random level,<br/>greedy descent, ef_construction beam"]:::core
-        Select["Neighbor heuristic<br/>diverse edges, prune to M (2M at layer 0)"]:::control
-    end
-
-    subgraph Search["Search path (HNSW.search)"]
-        direction TB
-        Greedy["Greedy descent<br/>upper layers, beam of 1"]:::core
-        Beam["Best-first beam search<br/>bottom layer, width ef"]:::core
-        TopK["Top-k by distance"]:::core
-    end
-
-    subgraph State["Data and state (in memory)"]
-        direction TB
-        Graph[("Layered proximity graph<br/>entry point, max level")]:::data
-        Metric["Distance metric<br/>squared Euclidean or cosine"]:::control
+        Vectors[("Synthetic vectors<br/>clustered, seeded")]:::data
+        Graph[("Layered graph<br/>M edges per node")]:::data
         Brute[("BruteForce index<br/>exact ground truth")]:::data
+        Metric["Distance metric<br/>Euclidean or cosine"]:::control
+        Vectors --> Graph
+        Brute ~~~ Metric
     end
 
-    subgraph Evaluation["Evaluation and observability"]
+    subgraph Core["HNSW index"]
         direction TB
-        Counter["DistanceCounter<br/>comparisons per query"]:::obs
-        Recall["Recall@k report<br/>recall, speedup vs exact"]:::obs
-        Compare["Cross-library benchmark<br/>hnswlib, FAISS flat and IVF"]:::obs
-        Metrics["ServiceMetrics<br/>per-route latency, Prometheus"]:::obs
+        Insert["Insert<br/>geometric level"]:::core
+        Select["Neighbor heuristic<br/>prune to M or 2M"]:::control
+        Greedy["Greedy descent<br/>upper layers"]:::core
+        Beam["Beam search<br/>bottom layer, ef"]:::core
+        TopK["Top-k by distance"]:::core
+        Insert --> Select ~~~ Greedy --> Beam --> TopK
     end
 
-    Client -->|query vector| Router
-    CLI -->|serve| Router
-    CLI -->|benchmark, search| Vectors
-    Router --> Validate
-    Validate -->|vector, k, ef| Greedy
-    Vectors -->|add each point| Insert
-    Insert --> Select
-    Select -->|bidirectional edges| Graph
-    Vectors -->|add each point| Brute
-    Greedy -->|entry for layer 0| Beam
-    Beam --> TopK
-    TopK -->|ids + distances| Router
-    Greedy -.->|read| Graph
-    Beam -.->|read| Graph
-    Metric -.-> Graph
-    Beam -.-> Counter
-    TopK -->|approximate| Recall
-    Brute -.->|exact| Recall
-    Vectors -.->|same data| Compare
-    Brute -.->|ground truth| Compare
-    Router -.-> Metrics
+    subgraph Obs["Evaluation and observability"]
+        direction TB
+        Counter["DistanceCounter<br/>per query"]:::obs
+        Recall["Recall@k report<br/>recall, speedup"]:::obs
+        Compare["Cross-library run<br/>hnswlib, FAISS"]:::obs
+        Metrics["ServiceMetrics<br/>Prometheus"]:::obs
+        Recall ~~~ Counter ~~~ Compare ~~~ Metrics
+    end
+
+    Interfaces -->|vector, k, ef| Core
+    State -.->|vectors, graph| Core
+    Core -->|ids + distances| Obs
