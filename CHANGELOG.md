@@ -4,6 +4,26 @@ All notable changes to this project are documented here. The file is generated
 from Conventional Commits by [git-cliff](https://git-cliff.org) when a release is cut
 with `make cut-release`.
 
+## [0.3.0] 2026-11-02
+
+### Features
+
+- Build the Rust core into the package and use it by default (#4)
+
+### Performance
+
+- Faster exact Rust core, opt-in f32 SIMD mode, SIFT benchmark (#3)
+
+### Documentation
+
+- Remove authorship statements from docs and scripts
+- Recorded demos of more commands, with their vhs tapes (#1)
+- Recorded demos of the HTTP service and more commands (#2)
+
+### Maintenance
+
+- Classify squash merges in the changelog by the commits they contain
+
 ## [0.2.0] 2026-11-02
 
 ### Features
@@ -42,8 +62,3 @@ with `make cut-release`.
 
 - Initialize repository with license and overview
 - Remove Dependabot configuration
-
-### Bench
-
-- Add wall-clock comparison against an exact scan (#3)
-- Add large-workload scale benchmark (#4)
