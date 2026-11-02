@@ -1,8 +1,8 @@
 # ANN Vector Search Library
 
-> An approximate nearest neighbor vector search library built from scratch in Python, implementing HNSW (Hierarchical Navigable Small World) graphs, with recall and distance-computation cost measured against exact search.
+> An approximate nearest neighbor vector search library built from scratch in Python with a Rust core, implementing HNSW (Hierarchical Navigable Small World) graphs, with recall and distance-computation cost measured against exact search.
 
-Languages: Python. License: MIT. Source: https://github.com/adeoluo/ann-vector-search-library
+Languages: Python, Rust. License: MIT. Source: https://github.com/adeoluo/ann-vector-search-library
 
 ## Docs
 
@@ -17,12 +17,18 @@ Languages: Python. License: MIT. Source: https://github.com/adeoluo/ann-vector-s
 - [ADR-0001: Record architecture decisions](https://github.com/adeoluo/ann-vector-search-library/blob/main/docs/adr/0001-record-architecture-decisions.md)
 - [ADR-0002: HNSW for approximate nearest neighbor search](https://github.com/adeoluo/ann-vector-search-library/blob/main/docs/adr/0002-hnsw.md)
 - [ADR-0003: Measure distance computations, do not assert speed](https://github.com/adeoluo/ann-vector-search-library/blob/main/docs/adr/0003-measured-cost.md)
+- [ADR 0004: A Rust core that reproduces the Python index exactly](https://github.com/adeoluo/ann-vector-search-library/blob/main/docs/adr/0004-rust-core-exact-reproduction.md)
 - [ADR-NNNN: <short title>](https://github.com/adeoluo/ann-vector-search-library/blob/main/docs/adr/template.md)
 - [Changelog](https://github.com/adeoluo/ann-vector-search-library/blob/main/CHANGELOG.md): release history
 
 ## Source
 
+- [rust/src/distance.rs](https://github.com/adeoluo/ann-vector-search-library/blob/main/rust/src/distance.rs): Distance functions, summed in the same order as the Python implementation.
+- [rust/src/hnsw.rs](https://github.com/adeoluo/ann-vector-search-library/blob/main/rust/src/hnsw.rs): HNSW (Malkov and Yashunin, 2016), mirroring `ann_vector_search_library.hnsw.HNSW`.
+- [rust/src/lib.rs](https://github.com/adeoluo/ann-vector-search-library/blob/main/rust/src/lib.rs): Rust core of ann-vector-search-library: an HNSW index that reproduces the Python one.
+- [rust/src/python.rs](https://github.com/adeoluo/ann-vector-search-library/blob/main/rust/src/python.rs): PyO3 bindings, built by maturin into the `ann_vector_search_rs` extension module.
 - [src/ann_vector_search_library/__init__.py](https://github.com/adeoluo/ann-vector-search-library/blob/main/src/ann_vector_search_library/__init__.py): ANN Vector Search Library - HNSW approximate nearest neighbor search from scratch.
+- [src/ann_vector_search_library/backend.py](https://github.com/adeoluo/ann-vector-search-library/blob/main/src/ann_vector_search_library/backend.py): Optional Rust backend: ``RustHNSW``, a drop-in for ``HNSW`` backed by ``ann_vector_search_rs``.
 - [src/ann_vector_search_library/brute.py](https://github.com/adeoluo/ann-vector-search-library/blob/main/src/ann_vector_search_library/brute.py): Exact nearest-neighbor search by brute force, for recall ground truth.
 - [src/ann_vector_search_library/cli.py](https://github.com/adeoluo/ann-vector-search-library/blob/main/src/ann_vector_search_library/cli.py): Command line interface for the HNSW vector search library.
 - [src/ann_vector_search_library/data.py](https://github.com/adeoluo/ann-vector-search-library/blob/main/src/ann_vector_search_library/data.py): Deterministic synthetic vector datasets with cluster structure.
