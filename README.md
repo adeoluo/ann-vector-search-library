@@ -245,6 +245,12 @@ A nearest-neighbor search with its distance count.
   <img src="docs/demo/search.gif" alt="A nearest-neighbor search with its distance count" width="860">
 </p>
 
+The HTTP service: index health, recall against exact search, and metrics.
+
+<p align="center">
+  <img src="docs/demo/http.gif" alt="The HTTP service: index health, recall against exact search, and metrics" width="860">
+</p>
+
 ## Design decisions
 
 - **HNSW over IVF or a k-d tree** - HNSW gives strong recall in high dimensions where tree
