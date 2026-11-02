@@ -1,8 +1,8 @@
 """Build and query speed of the Python and Rust HNSW on the same data and settings.
 
 Both indexes receive the same vectors in the same order with the same seed, so they
-build the same graph; the script checks that their answers agree. Requires
-`make rust-develop`.
+build the same graph; the script checks that their answers agree. The Rust index runs
+in ``f64`` mode here, the one that reproduces the Python index.
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ DIM, K, EF = 32, 10, 64
 
 def main() -> None:
     if not rust_available():
-        raise SystemExit("build the extension first: make rust-develop")
+        raise SystemExit("build the Rust core first: uv sync (or make rust-develop)")
     print(f"cpus={os.cpu_count()} dim={DIM} m=8 ef_construction=64 k={K} ef={EF}")
     print(
         "| vectors | build py s | build rust s | speedup | query py ms | query rust ms "

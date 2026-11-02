@@ -22,10 +22,10 @@ from dataclasses import dataclass, field
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 
+from ann_vector_search_library.backend import VectorIndex, create_index
 from ann_vector_search_library.brute import BruteForce
 from ann_vector_search_library.data import make_queries, make_vectors
 from ann_vector_search_library.evaluation import recall_at_k
-from ann_vector_search_library.hnsw import HNSW
 from ann_vector_search_library.observability import ServiceMetrics
 
 JsonObject = dict[str, Any]
@@ -36,7 +36,7 @@ _MAX_K = 100
 class SearchService:
     """Holds the built index and answers search and recall requests."""
 
-    index: HNSW
+    index: VectorIndex
     brute: BruteForce
     queries: list[list[float]]
     dim: int
@@ -45,7 +45,7 @@ class SearchService:
     @classmethod
     def built(cls, *, count: int = 1000, dim: int = 16, seed: int = 0) -> SearchService:
         vectors = make_vectors(count, dim, seed=seed)
-        index = HNSW(dim=dim, seed=seed)
+        index = create_index(dim, seed=seed)
         brute = BruteForce(dim=dim)
         for node_id, vector in enumerate(vectors):
             index.add(node_id, vector)

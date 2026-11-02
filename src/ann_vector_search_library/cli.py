@@ -4,15 +4,21 @@ from __future__ import annotations
 
 import argparse
 
+from ann_vector_search_library.backend import BACKENDS, RustHNSW, VectorIndex, create_index
 from ann_vector_search_library.brute import BruteForce
 from ann_vector_search_library.data import make_queries, make_vectors
 from ann_vector_search_library.evaluation import recall_curve
-from ann_vector_search_library.hnsw import HNSW
 
 
-def _build(args: argparse.Namespace) -> tuple[HNSW, BruteForce, list[list[float]]]:
+def _build(args: argparse.Namespace) -> tuple[VectorIndex, BruteForce, list[list[float]]]:
     vectors = make_vectors(args.count, args.dim, seed=args.seed)
-    index = HNSW(dim=args.dim, m=args.m, ef_construction=args.ef_construction, seed=args.seed)
+    index = create_index(
+        args.dim,
+        m=args.m,
+        ef_construction=args.ef_construction,
+        seed=args.seed,
+        backend=args.backend,
+    )
     brute = BruteForce(dim=args.dim)
     for node_id, vector in enumerate(vectors):
         index.add(node_id, vector)
@@ -23,7 +29,8 @@ def _build(args: argparse.Namespace) -> tuple[HNSW, BruteForce, list[list[float]
 
 def _cmd_benchmark(args: argparse.Namespace) -> None:
     index, brute, queries = _build(args)
-    print(f"Built HNSW over {len(index)} vectors (dim {args.dim}, M {args.m}).")
+    engine = f"Rust core, {index.precision}" if isinstance(index, RustHNSW) else "Python"
+    print(f"Built HNSW ({engine}) over {len(index)} vectors (dim {args.dim}, M {args.m}).")
     print("Recall and distance-computation cost against exact search:")
     for report in recall_curve(index, brute, queries, args.k, [16, 32, 64, 128]):
         print(f"  {report.format()}")
@@ -53,6 +60,12 @@ def _add_common(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--ef-construction", type=int, default=64)
     parser.add_argument("--k", type=int, default=10)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument(
+        "--backend",
+        choices=BACKENDS,
+        default="auto",
+        help="auto picks the Rust core when built (the default for installs)",
+    )
 
 
 def main(argv: list[str] | None = None) -> None:

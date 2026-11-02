@@ -11,7 +11,7 @@ import random
 import pytest
 
 from ann_vector_search_library import backend
-from ann_vector_search_library.backend import RustHNSW, rust_available
+from ann_vector_search_library.backend import RustHNSW, create_index, rust_available
 from ann_vector_search_library.brute import BruteForce
 from ann_vector_search_library.data import make_queries, make_vectors
 from ann_vector_search_library.hnsw import HNSW
@@ -113,5 +113,19 @@ def test_f32_precision_keeps_recall(metric: str) -> None:
 
 def test_missing_extension(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(backend, "_EXTENSION", None)
-    with pytest.raises(RuntimeError, match="not installed"):
+    with pytest.raises(RuntimeError, match="not built"):
         RustHNSW(dim=2)
+
+
+def test_create_index_defaults_to_the_rust_core(monkeypatch: pytest.MonkeyPatch) -> None:
+    index = create_index(4)
+    assert isinstance(index, RustHNSW)
+    assert index.precision == "f32"
+    assert isinstance(create_index(4, backend="rust", precision="f64"), RustHNSW)
+    assert isinstance(create_index(4, backend="python"), HNSW)
+    with pytest.raises(ValueError, match="unknown backend"):
+        create_index(4, backend="gpu")
+    monkeypatch.setattr(backend, "_EXTENSION", None)
+    assert isinstance(create_index(4), HNSW)  # auto falls back without the extension
+    with pytest.raises(RuntimeError, match="not built"):
+        create_index(4, backend="rust")

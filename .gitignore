@@ -33,3 +33,7 @@ checkpoints/
 .idea/
 .vscode/
 rust/target/
+
+# Rust extension built in place by editable installs
+*.so
+*.pyd
