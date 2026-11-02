@@ -1,13 +1,14 @@
 <h1 align="center">ANN Vector Search Library</h1>
 
 <p align="center">
-  <em>An approximate nearest neighbor vector search library built from scratch in Python, implementing HNSW (Hierarchical Navigable Small World) graphs, with recall and distance-computation cost measured against exact search.</em>
+  <em>An approximate nearest neighbor vector search library built from scratch in Python with a Rust core, implementing HNSW (Hierarchical Navigable Small World) graphs, with recall and distance-computation cost measured against exact search.</em>
 </p>
 
 <p align="center">
   <a href="https://github.com/adeoluo/ann-vector-search-library/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/adeoluo/ann-vector-search-library/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://github.com/adeoluo/ann-vector-search-library/releases"><img alt="Release" src="https://img.shields.io/github/v/release/adeoluo/ann-vector-search-library"></a>
   <img alt="Python" src="https://img.shields.io/badge/python-3.11%20%7C%203.12-blue">
+  <img alt="Rust" src="https://img.shields.io/badge/rust-core-B7410E">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green"></a>
 </p>
 
@@ -49,6 +50,8 @@ decisions.
 - **Bounded best-first search** (the ``ef`` beam) at the bottom layer, with greedy descent above.
 - **Degree pruning** to a maximum of ``M`` edges per node (``2M`` at the base layer).
 - **A brute-force index** and a **distance counter** so recall and cost are both measured.
+- **A Rust core** (`rust/`, optional): the same HNSW, reproducing the Python index exactly
+  (same graph, same neighbors, same distance counts), with parallel batch search.
 
 ## Results
 
@@ -130,6 +133,19 @@ the index's relative advantage widens (from about 3x to 14x fewer milliseconds p
 grows linearly with the vector count. These are synthetic data on this Python implementation: the
 numbers show how the algorithm scales, not competitive absolute latency against a compiled library.
 
+### Rust core
+
+> Reproduce with `make rust-develop bench-compare`. 32 dimensions, M=8, ef_construction=64,
+> k=10, ef=64, 200 queries; Apple M1, 8 cores. Query times include converting Python lists.
+
+| Vectors | Build (Python) | Build (Rust) | Speedup | Query (Python) | Query (Rust) | Speedup | Batch query (Rust, parallel) | Same answers |
+|---:|---:|---:|---:|---:|---:|---:|---:|:---:|
+| 2,000 | 1.5 s | 0.07 s | 21x | 0.57 ms | 0.040 ms | 14x | 0.026 ms | yes |
+| 10,000 | 12.5 s | 0.56 s | 22x | 0.89 ms | 0.058 ms | 15x | 0.028 ms | yes |
+
+The speedup comes from compiled distance loops and data layout, not a different algorithm:
+both indexes make exactly the same distance computations, which the parity tests assert.
+
 ### Evaluation
 
 Datasets and queries are generated deterministically, so every number reproduces offline. Full
@@ -182,6 +198,22 @@ Recall and distance-computation cost against exact search:
   ef=128: recall=1.0000, 324 vs 1000 distance ops/query (3.1x fewer)
 ```
 
+### Rust backend
+
+```bash
+make rust-develop          # build the extension into .venv (needs a Rust toolchain)
+```
+
+```python
+from ann_vector_search_library.backend import RustHNSW
+
+index = RustHNSW(dim=32, m=8, ef_construction=64, seed=0)  # same constructor as HNSW
+for i, vector in enumerate(vectors):
+    index.add(i, vector)
+index.search(query, 10, ef=64)
+index.search_batch(queries, 10, ef=64)  # parallel, GIL released
+```
+
 ### HTTP service
 
 A standard-library HTTP service builds the index at startup, then answers queries. The routing
@@ -203,6 +235,10 @@ roughly **600 queries/second** at **p50 1.4 ms** on one CPU.
   methods degrade, and it supports incremental insertion. See [ADR 0002](docs/adr/0002-hnsw.md).
 - **A measured distance counter** - reporting comparisons per query makes the recall/cost
   trade-off concrete rather than a claim. See [ADR 0003](docs/adr/0003-measured-cost.md).
+- **A Rust core that reproduces the Python index exactly** - levels are drawn on the Python
+  side from the same seeded generator and passed in, and the Rust code makes the same
+  distance calls in the same order, so the two can be compared call for call. See
+  [ADR 0004](docs/adr/0004-rust-core-exact-reproduction.md).
 
 ## Testing
 
@@ -212,7 +248,14 @@ uv run pytest --cov=src --cov-report=term-missing --cov-fail-under=80
 
 # opt-in recall parity against hnswlib and FAISS
 uv sync --group validation && uv run pytest tests/test_library_parity.py
+
+# Rust core: unit tests, then parity with the Python index
+make rust-check rust-develop parity
 ```
+
+`tests/test_rust_parity.py` builds both indexes from the same data and asserts identical
+search results and identical distance counts, for both metrics, three `M`/`ef` settings,
+three `ef` values at query time, arbitrary integer ids, and parallel batch search.
 
 The suite in `tests/` uses seeded synthetic data, so results are deterministic:
 
@@ -228,7 +271,8 @@ The suite in `tests/` uses seeded synthetic data, so results are deterministic:
 
 CI (`.github/workflows/ci.yml`) runs `ruff format --check`, `ruff check`, `mypy src`, and
 `pytest` with an 80% coverage gate on Python 3.11 and 3.12, then builds the package and the
-Docker image.
+Docker image. A separate job runs `cargo fmt`, `clippy`, and `cargo test`, builds the
+extension, and runs the parity tests with the extension required.
 
 ## Responsible AI
 
@@ -238,8 +282,10 @@ Docker image.
 
 ## Limitations
 
-- Distance math in interpreted Python is slow per comparison; the win is in doing far fewer of them, not in
-  the speed of each. An optimized kernel would lower absolute latency.
+- The Python index is slow per comparison; the optional Rust core is 14 to 22 times faster but
+  still uses scalar `f64` loops without SIMD or quantization, so it remains slower than hnswlib.
+- Results match exactly only when no two distances are equal; with exact ties the two
+  implementations may order tied neighbors differently.
 - The index is in-memory and not persisted; there is no on-disk format or deletion support.
 - Recall depends on ``M`` and ``ef``; the defaults suit the bundled datasets and may need tuning
   for other distributions.
@@ -247,7 +293,8 @@ Docker image.
 ## Roadmap
 
 - [x] Benchmark recall and wall-clock latency against hnswlib and FAISS on a shared dataset.
-- [ ] Add a vectorized or compiled distance backend to close the wall-clock gap.
+- [x] Add a compiled backend (Rust core, exact reproduction of the Python index).
+- [ ] SIMD distance kernels and `f32` storage in the Rust core.
 - [ ] Add node deletion with lazy tombstones and re-linking.
 - [ ] Add a persisted on-disk index format.
 - [ ] Add scalar quantization of stored vectors to cut memory.
