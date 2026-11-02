@@ -1,4 +1,4 @@
-.PHONY: help setup lint format type test coverage evaluation run diagram docker-build docker-up clean all changelog cut-release
+.PHONY: rust-check rust-develop parity bench-compare help setup lint format type test coverage evaluation run diagram docker-build docker-up clean all changelog cut-release
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -24,6 +24,19 @@ test: ## Run tests
 
 coverage: ## Tests with coverage gate
 	uv run pytest --cov=src --cov-report=term-missing --cov-fail-under=80
+
+rust-check: ## Rust core: fmt, clippy (with and without Python), unit tests
+	cd rust && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo clippy --all-targets --features python -- -D warnings && cargo test
+
+rust-develop: ## Build the Rust extension into .venv (opt-in rust group)
+	uv sync --group rust
+	uv run --no-sync maturin develop --uv --release -m rust/Cargo.toml
+
+parity: ## Rust vs Python parity tests (requires rust-develop)
+	ANN_REQUIRE_RUST=1 uv run --no-sync pytest tests/test_rust_parity.py -v
+
+bench-compare: ## Python vs Rust build and query speed (requires rust-develop)
+	uv run --no-sync python benchmarks/compare_backends.py
 
 evaluation: ## Reproduce the results table
 	uv run python -m ann_vector_search_library benchmark

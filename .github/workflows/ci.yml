@@ -54,6 +54,43 @@ jobs:
           name: coverage
           path: coverage.xml
 
+  rust:
+    name: rust core and parity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Format, lint and unit tests
+        working-directory: rust
+        run: |
+          cargo fmt --check
+          cargo clippy --all-targets -- -D warnings
+          cargo clippy --all-targets --features python -- -D warnings
+          cargo test
+
+      - name: Build extension (maturin develop)
+        run: |
+          uv sync --group rust --python 3.12
+          uv run --no-sync maturin develop --uv --release -m rust/Cargo.toml
+
+      - name: Parity tests (Rust vs Python)
+        env:
+          ANN_REQUIRE_RUST: "1"
+        run: uv run --no-sync pytest tests/test_rust_parity.py -v
+
   build:
     name: build (package + image)
     runs-on: ubuntu-latest
