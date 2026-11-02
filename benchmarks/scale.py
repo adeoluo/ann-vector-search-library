@@ -2,7 +2,7 @@
 
 Builds the index over synthetic datasets of increasing size and reports build
 time, per-query latency against an exact scan, recall, and peak memory. This is
-synthetic data and a pure-Python implementation, so the numbers measure how the
+synthetic data and an interpreted Python implementation, so the numbers measure how the
 algorithm scales, not competitive wall-clock latency against a compiled library
 such as FAISS or hnswlib. Deterministic and offline; run with:
 
@@ -19,7 +19,7 @@ from ann_vector_search_library.evaluation import timed_comparison
 def main() -> None:
     print(
         "HNSW at scale (synthetic clustered vectors, dim 16, ef 64; "
-        "pure-Python, not competitive on wall-clock with compiled libraries):"
+        "interpreted Python, not competitive on wall-clock with compiled libraries):"
     )
     for count in (1000, 2000, 4000, 8000):
         tracemalloc.start()

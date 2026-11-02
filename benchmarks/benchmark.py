@@ -37,7 +37,7 @@ def main() -> None:
 
     print()
     print("Wall-clock comparison against an exact scan (averaged over 3 seeds):")
-    print("Fewer distance computations do not guarantee lower latency in pure Python.")
+    print("Fewer distance computations do not guarantee lower latency in interpreted Python.")
     for size in (1000, 2000, 4000):
         print(f"  {timed_comparison(count=size, dim=dim, k=k, ef=64).format()}")
 

@@ -68,7 +68,7 @@ class TimedComparison:
     """Wall-clock comparison of the index against an exact scan at a dataset size.
 
     Distance-computation counts show the algorithmic saving, but wall-clock time
-    is what a caller experiences. Pure-Python interpreter overhead means fewer
+    is what a caller experiences. Python interpreter overhead means fewer
     distance computations do not automatically translate into lower latency, so
     this report measures real time, averaged over several seeds for stability.
     """
@@ -110,8 +110,8 @@ def timed_comparison(
 ) -> TimedComparison:
     """Average build time, index-query time, exact-scan time, and recall over seeds.
 
-    The exact scan is this library's own pure-Python :class:`BruteForce`, which
-    keeps the comparison dependency-free and apples-to-apples (same interpreter,
+    The exact scan is this library's own :class:`BruteForce`, which keeps the
+    comparison apples-to-apples (same interpreter,
     same metric). It is an exact baseline, not an optimized compiled library.
     """
 

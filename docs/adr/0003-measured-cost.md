@@ -4,8 +4,8 @@
 - **Date:** 2026-01-01
 
 ## Context
-The value of an approximate index is that it touches fewer points than a brute-force scan. In pure
-Python, wall-clock time is noisy and dominated by interpreter overhead, so a timing number would
+The value of an approximate index is that it touches fewer points than a brute-force scan. In this Python
+implementation, wall-clock time is noisy and dominated by interpreter overhead, so a timing number would
 be a weak and unstable claim.
 
 ## Decision

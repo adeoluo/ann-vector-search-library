@@ -42,7 +42,7 @@ for HNSW grow slowly with ``n``.
 ## Service performance
 
 Under a concurrent stress benchmark (3000 requests, 8 workers) the `/search` handler sustains
-roughly 600 queries per second with p50 near 1.4 ms. Pure-Python distance math dominates absolute
+roughly 600 queries per second with p50 near 1.4 ms. Interpreted distance math dominates absolute
 latency; the algorithmic win is in the number of comparisons.
 
 ## Reproducibility

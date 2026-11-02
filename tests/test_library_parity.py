@@ -4,8 +4,8 @@ At matched HNSW parameters the from-scratch index should reach essentially the
 same recall as hnswlib (the reference HNSW implementation), and FAISS flat should
 be exact. This validates that the graph construction and search are correct, not
 merely internally consistent. hnswlib, faiss, and numpy are optional ``validation``
-dependencies, so this test is skipped when they are not installed and the core
-library stays zero dependency.
+dependencies, so this test is skipped when they are not installed; the core
+library does not require them.
 """
 
 from __future__ import annotations
