@@ -1,0 +1,33 @@
+# ANN Vector Search Library
+
+> An approximate nearest neighbor vector search library built from scratch in Python, implementing HNSW (Hierarchical Navigable Small World) graphs, with recall and distance-computation cost measured against exact search.
+
+Languages: Python. License: MIT. Source: https://github.com/adeoluo/ann-vector-search-library
+
+## Docs
+
+- [README](https://github.com/adeoluo/ann-vector-search-library/blob/main/README.md): motivation, architecture, results, quickstart, usage, design decisions, testing, responsible ai, limitations, roadmap
+- [AGENTS.md](https://github.com/adeoluo/ann-vector-search-library/blob/main/AGENTS.md): layout, commands and conventions for changing the code
+- [Architecture diagram](https://github.com/adeoluo/ann-vector-search-library/blob/main/docs/architecture/architecture.mmd): Mermaid source of the component diagram
+- [Data Card - ANN Vector Search Library](https://github.com/adeoluo/ann-vector-search-library/blob/main/docs/DATA_CARD.md)
+- [Definition of Done](https://github.com/adeoluo/ann-vector-search-library/blob/main/docs/DEFINITION_OF_DONE.md)
+- [Evaluation Report - ANN Vector Search Library](https://github.com/adeoluo/ann-vector-search-library/blob/main/docs/EVALUATION_REPORT.md)
+- [Model / System Card - ANN Vector Search Library](https://github.com/adeoluo/ann-vector-search-library/blob/main/docs/MODEL_CARD.md)
+- [Threat Model - ANN Vector Search Library](https://github.com/adeoluo/ann-vector-search-library/blob/main/docs/THREAT_MODEL.md)
+- [ADR-0001: Record architecture decisions](https://github.com/adeoluo/ann-vector-search-library/blob/main/docs/adr/0001-record-architecture-decisions.md)
+- [ADR-0002: HNSW for approximate nearest neighbor search](https://github.com/adeoluo/ann-vector-search-library/blob/main/docs/adr/0002-hnsw.md)
+- [ADR-0003: Measure distance computations, do not assert speed](https://github.com/adeoluo/ann-vector-search-library/blob/main/docs/adr/0003-measured-cost.md)
+- [ADR-NNNN: <short title>](https://github.com/adeoluo/ann-vector-search-library/blob/main/docs/adr/template.md)
+- [Changelog](https://github.com/adeoluo/ann-vector-search-library/blob/main/CHANGELOG.md): release history
+
+## Source
+
+- [src/ann_vector_search_library/__init__.py](https://github.com/adeoluo/ann-vector-search-library/blob/main/src/ann_vector_search_library/__init__.py): ANN Vector Search Library - HNSW approximate nearest neighbor search from scratch.
+- [src/ann_vector_search_library/brute.py](https://github.com/adeoluo/ann-vector-search-library/blob/main/src/ann_vector_search_library/brute.py): Exact nearest-neighbor search by brute force, for recall ground truth.
+- [src/ann_vector_search_library/cli.py](https://github.com/adeoluo/ann-vector-search-library/blob/main/src/ann_vector_search_library/cli.py): Command line interface for the HNSW vector search library.
+- [src/ann_vector_search_library/data.py](https://github.com/adeoluo/ann-vector-search-library/blob/main/src/ann_vector_search_library/data.py): Deterministic synthetic vector datasets with cluster structure.
+- [src/ann_vector_search_library/distance.py](https://github.com/adeoluo/ann-vector-search-library/blob/main/src/ann_vector_search_library/distance.py): Distance functions over plain Python float vectors.
+- [src/ann_vector_search_library/evaluation.py](https://github.com/adeoluo/ann-vector-search-library/blob/main/src/ann_vector_search_library/evaluation.py): Evaluation: recall against exact search and the recall/cost trade-off.
+- [src/ann_vector_search_library/hnsw.py](https://github.com/adeoluo/ann-vector-search-library/blob/main/src/ann_vector_search_library/hnsw.py): Hierarchical Navigable Small World (HNSW) approximate nearest neighbor index.
+- [src/ann_vector_search_library/observability.py](https://github.com/adeoluo/ann-vector-search-library/blob/main/src/ann_vector_search_library/observability.py): In-process request metrics for the HTTP service (Prometheus text exposition).
+- [src/ann_vector_search_library/service.py](https://github.com/adeoluo/ann-vector-search-library/blob/main/src/ann_vector_search_library/service.py): A standard-library HTTP service exposing the HNSW index.
