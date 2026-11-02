@@ -5,6 +5,10 @@ same seeded ``random.Random`` with the same formula and passes it in, and the Ru
 makes the same distance calls in the same order. Given the same inserts, both build the
 same graph and return the same neighbors and distance counts (when no two distances are
 exactly equal). ``search_batch`` runs queries in parallel with the GIL released.
+
+``precision="f32"`` stores 32-bit floats and sums distances in SIMD lanes instead. It runs
+the same algorithm faster in half the memory, but the reordered sums round differently,
+so it does not reproduce the Python index and is checked on recall instead.
 """
 
 from __future__ import annotations
@@ -48,7 +52,8 @@ class _RustCounter:
 
 
 class RustHNSW:
-    """``HNSW`` with the graph and searches in Rust. Same constructor and methods."""
+    """``HNSW`` with the graph and searches in Rust. Same constructor and methods, plus
+    ``precision`` ("f64" reproduces the Python index, "f32" trades that for speed)."""
 
     def __init__(
         self,
@@ -57,6 +62,7 @@ class RustHNSW:
         ef_construction: int = 64,
         metric: str = "euclidean",
         seed: int = 0,
+        precision: str = "f64",
     ) -> None:
         if _EXTENSION is None:
             raise RuntimeError("the Rust backend is not installed; run `make rust-develop`")
@@ -66,7 +72,8 @@ class RustHNSW:
         self.ef_construction = ef_construction
         self.metric = metric
         self.seed = seed
-        self._core = _EXTENSION.HNSW(dim, m, ef_construction, metric)
+        self.precision = precision
+        self._core = _EXTENSION.HNSW(dim, m, ef_construction, metric, precision)
         self._rng = random.Random(seed)
         self._level_mult = 1.0 / math.log(m) if m > 1 else 1.0
         self.counter = _RustCounter(self._core)

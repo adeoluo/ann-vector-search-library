@@ -110,11 +110,11 @@ dependencies, used only for this comparison and not required by the core library
 The key result is that the from-scratch index reaches **the same recall as hnswlib (0.926) at
 matched parameters**, which is direct evidence that the HNSW graph construction and search are
 implemented correctly, not merely internally consistent. The honest gap is wall-clock: the compiled
-libraries build roughly 150x faster and answer queries roughly 27x faster, exactly what is expected
-from an interpreted Python implementation versus optimized native code. The recall parity is enforced by an
-opt-in test, `tests/test_library_parity.py`, which asserts the from-scratch recall tracks hnswlib
-within a small tolerance. Closing the latency gap would require a vectorized or compiled backend,
-which is noted in the roadmap.
+libraries build roughly 150x faster and answer queries roughly 27x faster than the Python index,
+exactly what is expected from an interpreted implementation versus optimized native code. The recall
+parity is enforced by an opt-in test, `tests/test_library_parity.py`, which asserts the from-scratch
+recall tracks hnswlib within a small tolerance. The Rust core closes the latency gap; its head to
+head with hnswlib on real data is in [Real image descriptors](#real-image-descriptors-sift-100000-vectors).
 
 ### Scale
 
@@ -140,11 +140,50 @@ numbers show how the algorithm scales, not competitive absolute latency against 
 
 | Vectors | Build (Python) | Build (Rust) | Speedup | Query (Python) | Query (Rust) | Speedup | Batch query (Rust, parallel) | Same answers |
 |---:|---:|---:|---:|---:|---:|---:|---:|:---:|
-| 2,000 | 1.5 s | 0.07 s | 21x | 0.57 ms | 0.040 ms | 14x | 0.026 ms | yes |
-| 10,000 | 12.5 s | 0.56 s | 22x | 0.89 ms | 0.058 ms | 15x | 0.028 ms | yes |
+| 2,000 | 1.6 s | 0.04 s | 38x | 0.57 ms | 0.025 ms | 23x | 0.0074 ms | yes |
+| 10,000 | 12.7 s | 0.32 s | 40x | 0.90 ms | 0.043 ms | 21x | 0.0092 ms | yes |
 
 The speedup comes from compiled distance loops and data layout, not a different algorithm:
-both indexes make exactly the same distance computations, which the parity tests assert.
+both indexes make exactly the same distance computations, which the parity tests assert. The
+default `f64` core keeps vectors in one contiguous array, marks visited nodes with a reusable
+epoch counter instead of a hash set, carries each node's slot through the heaps instead of
+looking it up by id, and counts distances locally rather than through a shared atomic. None of
+that changes a single distance or comparison, so the answers stay identical to Python's.
+
+### Real image descriptors (SIFT, 100,000 vectors)
+
+> Reproduce with `make rust-develop && uv sync --group validation`, then
+> `uv run python benchmarks/sift.py --data <dir with sift_base.fvecs, sift_query.fvecs>`.
+> The first 100,000 SIFT1M base vectors (128 dims) and 1,000 queries, exact ground truth
+> recomputed on the subset, `M` 16, `ef_construction` 200, `k` 10. Builds and single queries on
+> one thread; Apple M1, 8 cores. Raw numbers: `benchmarks/results/sift100k.json`.
+
+| Index | Build | ef 16: recall, query | ef 64: recall, query | ef 256: recall, query |
+|---|---:|---:|---:|---:|
+| FAISS flat (exact scan) | 0.1 s | 1.000, 1.193 ms | | |
+| hnswlib | 34.4 s | 0.874, 0.061 ms | 0.988, 0.166 ms | 1.000, 0.474 ms |
+| Rust core, `f64` (exact Python parity), before this change | 76.3 s | 0.876, 0.138 ms | 0.988, 0.412 ms | 1.000, 1.153 ms |
+| Rust core, `f64` (exact Python parity) | 46.3 s | 0.876, 0.082 ms | 0.988, 0.220 ms | 1.000, 0.679 ms |
+| **Rust core, `f32` (SIMD lanes)** | **23.0 s** | 0.876, 0.040 ms | 0.988, **0.117 ms** | 1.000, **0.381 ms** |
+
+Parallel batch search on 8 threads brings the `f32` core to 0.030 ms per query at ef 64
+(about 33,000 queries per second). hnswlib's own 8-thread build takes 7.6 s, which this core
+does not try to match: its build is single-threaded so that it can replay Python's insertion
+order exactly.
+
+Where this stands, honestly:
+
+- **Recall is the same as hnswlib** at every `ef` on real data, which again checks the graph
+  construction rather than only its speed.
+- **The `f32` core is faster than hnswlib on this machine**: 1.5x per query at ef 16, 1.4x at
+  ef 64, 1.2x at ef 256, and 1.5x faster to build single-threaded. The caveat matters:
+  hnswlib's SIMD paths are written for x86, so its ARM build runs scalar loops here. On an x86
+  machine with AVX hnswlib would likely close or reverse this gap, and that has not been measured.
+- **hnswlib's multi-threaded build wins outright** (7.6 s against 23.0 s).
+- **The `f64` core is slower than hnswlib** (about 1.3 to 1.4x per query) by design: it sums
+  each distance one term at a time, in Python's order, so its answers match Python bit for bit,
+  and that serial sum cannot use SIMD. The changes above still made it 1.6x faster to build and
+  1.7 to 1.9x faster to query than before.
 
 ### Evaluation
 
@@ -159,9 +198,10 @@ FAISS"** section above goes further and benchmarks the index directly against
 [FAISS](https://github.com/facebookresearch/faiss) and
 [hnswlib](https://github.com/nmslib/hnswlib) on a shared dataset. The result is honest in both
 directions: the from-scratch index matches hnswlib's recall at matched parameters (the algorithm is
-correct), but the compiled libraries are far faster on wall-clock (roughly 27x on query latency), so
-this project does **not** claim to beat them on performance. This Python implementation will not
-match a compiled library's latency; closing that gap would require a vectorized or compiled backend.
+correct), but the compiled libraries are far faster than the Python index on wall-clock (roughly 27x
+on query latency). The Rust core is the compiled backend: on 100,000 real SIFT vectors its `f32` mode
+matches hnswlib's recall and answers queries 1.2 to 1.5x faster on an ARM machine where hnswlib runs
+without SIMD, while hnswlib keeps the faster multi-threaded build. No claim is made about x86.
 
 ## Quickstart
 
@@ -212,6 +252,8 @@ for i, vector in enumerate(vectors):
     index.add(i, vector)
 index.search(query, 10, ef=64)
 index.search_batch(queries, 10, ef=64)  # parallel, GIL released
+
+fast = RustHNSW(dim=32, precision="f32")  # SIMD lanes, half the memory, no bit-exact parity
 ```
 
 ### HTTP service
@@ -261,6 +303,10 @@ The HTTP service: index health, recall against exact search, and metrics.
   side from the same seeded generator and passed in, and the Rust code makes the same
   distance calls in the same order, so the two can be compared call for call. See
   [ADR 0004](docs/adr/0004-rust-core-exact-reproduction.md).
+- **An opt-in `f32` mode rather than a faster default** - summing a distance in SIMD lanes
+  reorders the additions, which changes the last bits and can change which of two near-equal
+  neighbors wins, so the bit-exact `f64` core stays the default and `precision="f32"` is
+  validated on recall: its tests require recall within 0.01 of the `f64` core.
 
 ## Testing
 
@@ -277,7 +323,9 @@ make rust-check rust-develop parity
 
 `tests/test_rust_parity.py` builds both indexes from the same data and asserts identical
 search results and identical distance counts, for both metrics, three `M`/`ef` settings,
-three `ef` values at query time, arbitrary integer ids, and parallel batch search.
+three `ef` values at query time, arbitrary integer ids, and parallel batch search. It also checks
+that the `f32` mode keeps recall within 0.01 of the `f64` core for both metrics, and Rust unit
+tests check the `f32` lane kernels against the `f64` ones across dimensions 1 to 769.
 
 The suite in `tests/` uses seeded synthetic data, so results are deterministic:
 
@@ -304,8 +352,12 @@ extension, and runs the parity tests with the extension required.
 
 ## Limitations
 
-- The Python index is slow per comparison; the optional Rust core is 14 to 22 times faster but
-  still uses scalar `f64` loops without SIMD or quantization, so it remains slower than hnswlib.
+- The Python index is slow per comparison; the optional Rust core is 21 to 40 times faster. Its
+  default `f64` mode stays about 1.3x slower than hnswlib per query because it keeps Python's
+  serial sums, and the `f32` mode, faster than hnswlib on ARM, has only been measured on an
+  Apple M1, not against hnswlib's x86 SIMD build.
+- Construction in the Rust core is single-threaded, so hnswlib's parallel build is about 3x
+  faster on 8 cores.
 - Results match exactly only when no two distances are equal; with exact ties the two
   implementations may order tied neighbors differently.
 - The index is in-memory and not persisted; there is no on-disk format or deletion support.
@@ -316,7 +368,8 @@ extension, and runs the parity tests with the extension required.
 
 - [x] Benchmark recall and wall-clock latency against hnswlib and FAISS on a shared dataset.
 - [x] Add a compiled backend (Rust core, exact reproduction of the Python index).
-- [ ] SIMD distance kernels and `f32` storage in the Rust core.
+- [x] SIMD distance kernels and `f32` storage in the Rust core.
+- [ ] Parallel graph construction in the Rust core.
 - [ ] Add node deletion with lazy tombstones and re-linking.
 - [ ] Add a persisted on-disk index format.
 - [ ] Add scalar quantization of stored vectors to cut memory.
