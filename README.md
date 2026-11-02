@@ -229,6 +229,22 @@ roughly **600 queries/second** at **p50 1.4 ms** on one CPU.
 | POST | `/search` | body `{"vector": [float], "k": int?, "ef": int?}`; nearest neighbors |
 | GET | `/recall` | recall@k of the index against exact search on held-out queries |
 
+### Demos
+
+Recorded from real runs with [vhs](https://github.com/charmbracelet/vhs); each tape is in `docs/demo/`.
+
+Recall and distance computations against an exact scan.
+
+<p align="center">
+  <img src="docs/demo/benchmark.gif" alt="Recall and distance computations against an exact scan" width="860">
+</p>
+
+A nearest-neighbor search with its distance count.
+
+<p align="center">
+  <img src="docs/demo/search.gif" alt="A nearest-neighbor search with its distance count" width="860">
+</p>
+
 ## Design decisions
 
 - **HNSW over IVF or a k-d tree** - HNSW gives strong recall in high dimensions where tree
