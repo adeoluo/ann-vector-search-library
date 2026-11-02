@@ -21,7 +21,8 @@ flowchart LR
         Brute[("BruteForce index<br/>exact ground truth")]:::data
         Metric["Distance metric<br/>Euclidean or cosine"]:::control
         Vectors --> Graph
-        Brute ~~~ Metric
+        RustCore[["Rust core (optional)<br/>same graph, batch search"]]:::core
+        Brute ~~~ Metric ~~~ RustCore
     end
 
     subgraph Core["HNSW index"]
@@ -44,5 +45,5 @@ flowchart LR
     end
 
     Interfaces -->|vector, k, ef| Core
-    State -.->|vectors, graph| Core
+    State -.->|vectors, graph, Rust backend| Core
     Core -->|ids + distances| Obs
