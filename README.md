@@ -31,10 +31,16 @@ number of distance computations it performs, so the saving is measured, not asse
   <img src="docs/architecture/architecture.svg" alt="Architecture diagram" width="860">
 </p>
 
+<sub>Legend: amber = entry points and external systems, indigo = core logic, green = data and state, blue = validation and control, grey = observability and outputs.</sub>
+
 Insertion assigns each point a random maximum level from a geometric distribution, greedily
 descends through the sparse upper layers, then runs a bounded best-first search at each lower
 layer and connects to neighbors chosen by a distance heuristic that spreads edges around the
-point. Search mirrors insertion. See the [ADRs](docs/adr/) for the key decisions.
+point. Search mirrors insertion: a validated query descends greedily, widens to an `ef` beam at the
+bottom layer, and returns the top k. A brute-force index over the same vectors supplies exact
+ground truth, so recall, distance counts, and the cross-library comparison are all measured, and
+the HTTP service records per-route Prometheus metrics. See the [ADRs](docs/adr/) for the key
+decisions.
 
 ### What it implements
 

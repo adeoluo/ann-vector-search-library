@@ -1,42 +1,66 @@
-flowchart TD
+flowchart LR
     classDef edge     fill:#F59E0B,stroke:#1E293B,color:#1E293B,stroke-width:1px;
     classDef core     fill:#6366F1,stroke:#1E293B,color:#ffffff,stroke-width:1px;
     classDef data     fill:#10B981,stroke:#1E293B,color:#ffffff,stroke-width:1px;
     classDef control  fill:#0EA5E9,stroke:#1E293B,color:#ffffff,stroke-width:1px;
     classDef obs      fill:#CBD5E1,stroke:#1E293B,color:#1E293B,stroke-width:1px;
 
-    Client([Client]):::edge
+    Client(["HTTP client"]):::edge
+    CLI(["CLI<br/>benchmark, search, serve"]):::edge
 
-    subgraph Build["Index construction"]
+    subgraph Interfaces["Interfaces (stdlib HTTP service)"]
         direction TB
-        Insert["Insert<br/>random level from geometric law"]:::core
-        Descend["Greedy descent<br/>through upper layers"]:::core
-        Connect["Beam search + neighbor heuristic<br/>connect M edges per layer"]:::core
+        Router["Router<br/>/health, /ready, /metrics, /search, /recall"]:::edge
+        Validate["Validation<br/>fixed-dim vector, k 1..100, bounded ef"]:::control
     end
 
-    Graph[(Layered proximity graph)]:::data
-
-    subgraph Query["Search path (stateless)"]
+    subgraph Build["Index construction (HNSW.add)"]
         direction TB
-        Top["Greedy descent<br/>upper layers, ef = 1"]:::core
-        Bottom["Beam search<br/>bottom layer, width ef"]:::core
+        Vectors[("Synthetic clustered vectors<br/>and held-out queries")]:::data
+        Insert["Insert<br/>geometric random level,<br/>greedy descent, ef_construction beam"]:::core
+        Select["Neighbor heuristic<br/>diverse edges, prune to M (2M at layer 0)"]:::control
+    end
+
+    subgraph Search["Search path (HNSW.search)"]
+        direction TB
+        Greedy["Greedy descent<br/>upper layers, beam of 1"]:::core
+        Beam["Best-first beam search<br/>bottom layer, width ef"]:::core
         TopK["Top-k by distance"]:::core
     end
 
-    Counter["Distance counter<br/>comparisons per query"]:::obs
-
-    subgraph Edge["Service layer (stdlib HTTP)"]
+    subgraph State["Data and state (in memory)"]
         direction TB
-        Router["Router<br/>/health | /ready | /metrics | /search | /recall"]:::core
-        Validate["Validation<br/>fixed-dim vector, bounded k and ef"]:::control
+        Graph[("Layered proximity graph<br/>entry point, max level")]:::data
+        Metric["Distance metric<br/>squared Euclidean or cosine"]:::control
+        Brute[("BruteForce index<br/>exact ground truth")]:::data
     end
 
-    Result["Nearest neighbors + recall vs exact"]:::obs
+    subgraph Evaluation["Evaluation and observability"]
+        direction TB
+        Counter["DistanceCounter<br/>comparisons per query"]:::obs
+        Recall["Recall@k report<br/>recall, speedup vs exact"]:::obs
+        Compare["Cross-library benchmark<br/>hnswlib, FAISS flat and IVF"]:::obs
+        Metrics["ServiceMetrics<br/>per-route latency, Prometheus"]:::obs
+    end
 
-    Insert --> Descend --> Connect -->|edges| Graph
-    Client -->|query vector| Router --> Validate --> Top --> Bottom --> TopK
-    Graph -.-> Top
-    Graph -.-> Bottom
-    Bottom -.-> Counter
-    TopK --> Result
-    Result --> Router -->|JSON response| Client
+    Client -->|query vector| Router
+    CLI -->|serve| Router
+    CLI -->|benchmark, search| Vectors
+    Router --> Validate
+    Validate -->|vector, k, ef| Greedy
+    Vectors -->|add each point| Insert
+    Insert --> Select
+    Select -->|bidirectional edges| Graph
+    Vectors -->|add each point| Brute
+    Greedy -->|entry for layer 0| Beam
+    Beam --> TopK
+    TopK -->|ids + distances| Router
+    Greedy -.->|read| Graph
+    Beam -.->|read| Graph
+    Metric -.-> Graph
+    Beam -.-> Counter
+    TopK -->|approximate| Recall
+    Brute -.->|exact| Recall
+    Vectors -.->|same data| Compare
+    Brute -.->|ground truth| Compare
+    Router -.-> Metrics
