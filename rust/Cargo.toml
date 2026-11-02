@@ -1,0 +1,26 @@
+[package]
+name = "ann-vector-search-rs"
+version = "0.1.0"
+edition = "2021"
+description = "Rust core of ann-vector-search-library: HNSW construction and search, reproducing the Python index exactly"
+license = "MIT"
+authors = ["Adeolu Ogunnoiki"]
+repository = "https://github.com/adeoluo/ann-vector-search-library"
+publish = false
+
+[lib]
+name = "ann_vector_search_rs"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+# Enabled by maturin (see pyproject.toml); plain `cargo test` needs no Python.
+python = ["dep:pyo3"]
+
+[dependencies]
+pyo3 = { version = "0.30", optional = true, features = ["abi3-py311"] }
+rayon = "1.10"
+
+[profile.release]
+lto = true
+codegen-units = 1

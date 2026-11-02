@@ -1,0 +1,16 @@
+[build-system]
+requires = ["maturin>=1.7,<2"]
+build-backend = "maturin"
+
+[project]
+name = "ann-vector-search-rs"
+version = "0.1.0"
+description = "Rust core (PyO3 extension) for ann-vector-search-library"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Adeolu Ogunnoiki" }]
+classifiers = ["Programming Language :: Rust", "Programming Language :: Python :: Implementation :: CPython"]
+
+[tool.maturin]
+module-name = "ann_vector_search_rs"
+features = ["python"]
