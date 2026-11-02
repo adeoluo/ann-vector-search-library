@@ -23,7 +23,7 @@ Languages: Python, Rust. License: MIT. Source: https://github.com/adeoluo/ann-ve
 
 ## Source
 
-- [rust/src/distance.rs](https://github.com/adeoluo/ann-vector-search-library/blob/main/rust/src/distance.rs): Distance functions, summed in the same order as the Python implementation.
+- [rust/src/distance.rs](https://github.com/adeoluo/ann-vector-search-library/blob/main/rust/src/distance.rs): Distance functions.
 - [rust/src/hnsw.rs](https://github.com/adeoluo/ann-vector-search-library/blob/main/rust/src/hnsw.rs): HNSW (Malkov and Yashunin, 2016), mirroring `ann_vector_search_library.hnsw.HNSW`.
 - [rust/src/lib.rs](https://github.com/adeoluo/ann-vector-search-library/blob/main/rust/src/lib.rs): Rust core of ann-vector-search-library: an HNSW index that reproduces the Python one.
 - [rust/src/python.rs](https://github.com/adeoluo/ann-vector-search-library/blob/main/rust/src/python.rs): PyO3 bindings, built by maturin into the `ann_vector_search_rs` extension module.
