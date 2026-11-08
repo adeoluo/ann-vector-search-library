@@ -1,10 +1,24 @@
 cff-version: 1.2.0
-message: "If you use this work, please cite it."
-title: "Ann Vector Search Library"
+message: "If you use this software, please cite it as below."
+type: software
+title: "ANN Vector Search Library"
+abstract: "An approximate nearest neighbor search library implementing HNSW graphs, with a Rust core used by default (SIMD f32, or f64 matching the Python reference exactly); matches hnswlib's recall on SIFT."
 authors:
   - family-names: "Ogunnoiki"
     given-names: "Adeolu"
-version: 0.1.0
-date-released: 2026-01-01
+version: "0.3.0"
+date-released: "2026-11-02"
 license: MIT
+repository-code: "https://github.com/adeoluo/ann-vector-search-library"
 url: "https://github.com/adeoluo/ann-vector-search-library"
+keywords:
+  - "approximate-nearest-neighbors"
+  - "from-scratch"
+  - "hnsw"
+  - "python"
+  - "retrieval"
+  - "similarity-search"
+  - "vector-database"
+  - "vector-search"
+  - "pyo3"
+  - "rust"
