@@ -45,7 +45,7 @@ impl PyHnsw {
             other => {
                 return Err(PyValueError::new_err(format!(
                     "unknown precision: {other:?} (expected 'f64' or 'f32')"
-                )))
+                )));
             }
         };
         Ok(Self { inner })
