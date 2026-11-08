@@ -9,7 +9,7 @@ from ann_vector_search_library.distance import DistanceCounter, cosine_distance,
 from ann_vector_search_library.evaluation import RecallReport, recall_at_k, recall_curve
 from ann_vector_search_library.hnsw import HNSW
 
-__version__ = "0.1.0"
+__version__ = "0.3.0"
 
 __all__ = [
     "HNSW",
