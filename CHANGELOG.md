@@ -4,6 +4,21 @@ All notable changes to this project are documented here. The file is generated
 from Conventional Commits by [git-cliff](https://git-cliff.org) when a release is cut
 with `make cut-release`.
 
+## [0.3.1] 2026-11-08
+
+### Bug fixes
+
+- Report the released version and keep version strings in step on release (#8)
+
+### Documentation
+
+- Describe the supply chain accurately (#5)
+- Complete citation metadata and bump it on release (#7)
+
+### Maintenance
+
+- Latest toolchain and CI versions (#6)
+
 ## [0.3.0] 2026-11-02
 
 ### Features
