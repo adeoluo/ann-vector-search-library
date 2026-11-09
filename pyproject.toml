@@ -1,6 +1,6 @@
 [project]
 name = "ann-vector-search-library"
-version = "0.3.1"
+version = "0.3.2"
 description = "An approximate nearest neighbor vector search library built from scratch in Python, implementing HNSW"
 readme = "README.md"
 requires-python = ">=3.12"
