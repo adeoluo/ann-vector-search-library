@@ -6,8 +6,8 @@ abstract: "An approximate nearest neighbor search library implementing HNSW grap
 authors:
   - family-names: "Ogunnoiki"
     given-names: "Adeolu"
-version: "0.3.1"
-date-released: "2026-11-08"
+version: "0.3.2"
+date-released: "2026-11-09"
 license: MIT
 repository-code: "https://github.com/adeoluo/ann-vector-search-library"
 url: "https://github.com/adeoluo/ann-vector-search-library"

@@ -1,6 +1,6 @@
 [package]
 name = "ann-vector-search-rs"
-version = "0.3.1"
+version = "0.3.2"
 edition = "2024"
 description = "Rust core of ann-vector-search-library: HNSW construction and search, reproducing the Python index exactly"
 license = "MIT"
