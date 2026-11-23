@@ -109,9 +109,9 @@ dependencies, used only for this comparison and not required by the core library
 | hnswlib (compiled) | 0.123 s | 0.028 ms | 0.926 |
 | **from-scratch (Python)** | 18.66 s | 0.765 ms | **0.926** |
 
-The key result is that the from-scratch index reaches **the same recall as hnswlib (0.926) at
-matched parameters**, which is direct evidence that the HNSW graph construction and search are
-implemented correctly, not merely internally consistent. The honest gap is wall-clock: the compiled
+The from-scratch index reaches **matched empirical recall with hnswlib (0.926) at
+identical `(M, ef_construction, ef)` settings**, complementing the exact Rust-vs-Python graph and
+distance parity tests in `tests/test_rust_parity.py`. The honest gap is wall-clock: the compiled
 libraries build roughly 150x faster and answer queries roughly 27x faster than the Python index,
 exactly what is expected from an interpreted implementation versus optimized native code. The recall
 parity is enforced by an opt-in test, `tests/test_library_parity.py`, which asserts the from-scratch
