@@ -16,6 +16,20 @@
 
 > **Evidence level: publicly benchmarked.** Recall on SIFT against hnswlib and FAISS; the Rust core is checked against the Python reference. Not independently reproduced and not used in production. [What the levels mean](https://github.com/adeoluo#evidence-levels).
 
+## In plain English
+
+Search over AI embeddings means finding the closest items among many. Checking every item is
+slow. This library builds a graph (the HNSW method) that jumps straight to the right
+neighborhood, written from scratch so every step can be read.
+
+- **7.1x less work for nearly the same answers.** It finds 94.5% of the true nearest items
+  while checking 280 items per question instead of all 2,000.
+- **Same accuracy as hnswlib,** the standard C++ library (0.926 recall on the same data).
+- **A Rust core gives the speed,** and it is checked against the readable Python version.
+
+**Where it falls short:** the pure Python version is about 27 times slower per question than
+hnswlib. It is the version meant for reading, not for serving.
+
 ## Motivation
 
 Nearest-neighbor search is the core of retrieval, recommendation, and
