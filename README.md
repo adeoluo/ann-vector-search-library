@@ -14,6 +14,8 @@
 
 ---
 
+> **Evidence level: publicly benchmarked.** Recall on SIFT against hnswlib and FAISS; the Rust core is checked against the Python reference. Not independently reproduced and not used in production. [What the levels mean](https://github.com/adeoluo#evidence-levels).
+
 ## Motivation
 
 Nearest-neighbor search is the core of retrieval, recommendation, and
