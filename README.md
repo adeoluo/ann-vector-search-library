@@ -16,7 +16,7 @@
 
 > **Evidence level: publicly benchmarked.** Recall on SIFT against hnswlib and FAISS; the Rust core is checked against the Python reference. Not independently reproduced and not used in production. [What the levels mean](https://github.com/adeoluo#evidence-levels).
 
-## Summary
+## Highlights
 
 Search over AI embeddings means finding the closest items among many. Checking every item is
 slow. This library builds a graph (the HNSW method) that jumps straight to the right
