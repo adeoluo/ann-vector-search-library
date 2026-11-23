@@ -94,6 +94,12 @@ jobs:
           ANN_REQUIRE_RUST: "1"
         run: uv run --no-sync pytest tests/test_rust_parity.py -v
 
+      # Without hnswlib and FAISS this file is skipped, so the comparison is gated here.
+      - name: Parity with hnswlib and FAISS
+        run: |
+          uv sync --group rust --group validation --python 3.12
+          uv run --no-sync pytest tests/test_library_parity.py -v -rs --no-cov
+
   build:
     name: build (package + image)
     runs-on: ubuntu-latest
