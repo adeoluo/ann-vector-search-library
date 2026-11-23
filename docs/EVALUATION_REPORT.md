@@ -1,6 +1,7 @@
 # Evaluation Report - ANN Vector Search Library
 
-> Reproduce with `python -m ann_vector_search_library benchmark` and `benchmarks/benchmark.py`.
+> Reproduce with `uv run python benchmarks/benchmark.py` (also `make evaluation`). The CLI's
+> `benchmark` command is a smaller demo (1,000 vectors by default) and prints other numbers.
 > Datasets and queries are generated deterministically.
 
 ## Setup

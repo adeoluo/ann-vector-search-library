@@ -39,7 +39,7 @@ bench-compare: ## Python vs Rust build and query speed
 	uv run --no-sync python benchmarks/compare_backends.py
 
 evaluation: ## Reproduce the results table
-	uv run python -m ann_vector_search_library benchmark
+	uv run python benchmarks/benchmark.py
 
 run: ## Run the HTTP service
 	uv run python -m ann_vector_search_library serve

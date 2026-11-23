@@ -73,7 +73,7 @@ decisions.
 
 ## Results
 
-> Reproduce with `python -m ann_vector_search_library benchmark`. Dataset: 2000 clustered
+> Reproduce with `uv run python benchmarks/benchmark.py` (also `make evaluation`). Dataset: 2000 clustered
 > 16-dimensional vectors; 100 held-out queries; recall@10 against exact search.
 
 | Search width (ef) | Recall@10 | Distance ops/query | Fewer than brute force |
