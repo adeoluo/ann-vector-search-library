@@ -14,7 +14,7 @@
 
 ---
 
-> **Evidence level: publicly benchmarked.** Recall is measured on SIFT, a public set of image descriptors, against hnswlib and FAISS. Tests check the Rust core against the Python reference version. No one else has reproduced the results, and the library is not used in production. [What the levels mean](https://github.com/adeoluo#evidence-levels).
+> **Evidence level: publicly benchmarked.** Recall is measured on SIFT, a public set of image descriptors, against hnswlib and FAISS. Tests check the Rust core against the Python reference version. No one else has reproduced the results, and the library is not used in production.
 
 ## Highlights
 
